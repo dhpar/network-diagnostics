@@ -1,14 +1,15 @@
-# syntax=docker/dockerfile:1
-FROM ubuntu:22.04
+FROM python:3.13.8-slim-trixie
 
-COPY requirements.txt .
-# install app dependencies
-RUN apt-get update && apt-get install -y python3 python3-pip
-RUN pip install -r requirements.txt
+ENV FLASK_ENV=development
 
-# install app
-COPY app.py /
+WORKDIR /usr/src/app
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 # final configuration
 EXPOSE 5000
-CMD ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
+
+CMD ["python", "app.py"]

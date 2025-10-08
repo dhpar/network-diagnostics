@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Activity, Wifi, Network, Globe, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import io from 'socket.io-client';
 import Card from './components/Card/Card';
 import Device from './components/Device/Device';
+import { ErrorBoundary } from 'react-error-boundary';
 
 const API_URL = 'http://localhost:5000';
 
@@ -218,11 +219,16 @@ const App: React.FC = () => {
           <div className="space-y-6">
             {/* Network Info Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              test
-              <Device 
-                label={'Local IP'} 
-                icon={<Globe className="w-6 h-6 text-blue-400" />} 
-              />
+              <Card>
+                <ErrorBoundary fallback={<div>Something went wrong</div>}>
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Device 
+                      label={'Local IP'} 
+                      icon={<Globe className="w-6 h-6 text-blue-400" />} 
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              </Card>
               <Card>
                 <div className="flex items-center space-x-3 mb-2">
                   <Network className="w-6 h-6 text-green-400" />

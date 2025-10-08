@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO,emit
 import sqlite3
 import threading
 import time
@@ -294,6 +294,17 @@ def handle_scan_request():
     devices = scan_network()
     emit('devices_update', {'devices': devices})
 
+ # Define a route for the home page ("/")
+@app.route("/")
+def hello_world():
+    return "Hello, World!"
+
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(
+        app, 
+        host='0.0.0.0', 
+        port=5000, 
+        debug=True, 
+        allow_unsafe_werkzeug=True
+    )
     
