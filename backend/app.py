@@ -295,9 +295,14 @@ def handle_scan_request():
     emit('devices_update', {'devices': devices})
 
  # Define a route for the home page ("/")
-@app.route("/")
-def hello_world():
-    return "Hello, World!"
+@app.route('/')
+def homepage():
+    return 'hello world'
+
+
+# @app.route("/spec")
+# def spec():
+#     return jsonify(swagger(app))
 
 if __name__ == '__main__':
     socketio.run(

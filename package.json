@@ -1,0 +1,24 @@
+{
+  "name": "network-diagnostics",
+  "version": "1.0.0",
+  "description": "A locally-hosted web application for diagnosing and monitoring network issues with real-time visualization.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker:build": "docker-compose up --build", 
+    "docker:watch": "docker-compose up --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhpar/network-diagnostics.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dhpar/network-diagnostics/issues"
+  },
+  "homepage": "https://github.com/dhpar/network-diagnostics#readme",
+  "workspaces": [
+    "frontend"
+  ]
+}
