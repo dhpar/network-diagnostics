@@ -1,15 +1,7 @@
 services:
   backend:
-    build: ./backend
-    ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=development
-    network_mode: host  # Required for network scanning
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-    restart: unless-stopped
+    build:
+      context: ./backend
     develop:
       watch:
         - action: sync
@@ -17,6 +9,9 @@ services:
           target: /app
         - action: rebuild
           path: requirements.txt # Rebuild if dependencies change
+    stop_signal: SIGINT
+    ports: 
+      - 5000:5000
 
   frontend:
     build: ./frontend
@@ -29,10 +24,7 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-    
 
 volumes:
-  backend:
-  sqlite_data:
   node_modules:
   

@@ -2,7 +2,7 @@ FROM python:3.13.8-slim-trixie
 
 ENV FLASK_ENV=development
 
-WORKDIR /usr/src/app
+WORKDIR /backend
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
