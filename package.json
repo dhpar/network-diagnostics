@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "docker:build": "docker-compose up --build", 
-    "docker:watch": "docker-compose up --watch"
+    "docker:watch": "docker-compose up --watch",
+    "penv": "./backend/venv/bin/activate && python ./backend/app.py"
   },
   "repository": {
     "type": "git",

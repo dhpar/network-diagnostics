@@ -1,10 +1,12 @@
+import subprocess
 import time
-from app import socketio
+# from app import socketio
 from database import get_db
 from datetime import datetime
 from platform import system
 from subprocess import run
 import re
+import os
 
 def get_local_ip():
     """Get local IP address"""
@@ -14,23 +16,24 @@ def get_local_ip():
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-        return ip
+        if ip:
+            return ip
+        else:
+            return f'No ip found'
     except:
         return "127.0.0.1"
 
 def get_gateway():
-    """Get default gateway"""
     try:
-        if system() == "Windows":
-            result = run(['ipconfig'], capture_output=True, text=True)
-            match = re.search(r'Default Gateway.*?:\s*([\d.]+)', result.stdout)
-            return match.group(1) if match else None
-        else:
-            result = run(['ip', 'route'], capture_output=True, text=True)
-            match = re.search(r'default via ([\d.]+)', result.stdout)
-            return match.group(1) if match else None
-    except:
+        result = os.popen('ip route').read()
+        for line in result.splitlines():
+            if 'default via' in line:
+                parts = line.split()
+                if 'via' in parts:
+                    return parts[parts.index('via') + 1]
+    except subprocess.CalledProcessError:
         return None
+    return None
 
 def ping_host(ip):
     """Ping a host to check if it's alive"""
@@ -121,7 +124,7 @@ def background_scan():
             conn.close()
             
             # Emit update to connected clients
-            socketio.emit('devices_update', {'devices': devices})
+            # socketio.emit('devices_update', {'devices': devices})
             
         except Exception as e:
             print(f"Background scan error: {e}")

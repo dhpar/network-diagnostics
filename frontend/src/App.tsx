@@ -1,11 +1,8 @@
-import { useState, useEffect, Suspense } from 'react';
-import { Activity, Wifi, Network, Globe, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
-import io from 'socket.io-client';
+import { useState, useEffect } from 'react';
+import { Wifi, Network, Globe, RefreshCw, CheckCircle, XCircle, Clock, Activity, VenetianMask } from 'lucide-react';
+// import io from 'socket.io-client';
 import Card from './components/Card/Card';
-import Device from './components/Device/Device';
-import { ErrorBoundary } from 'react-error-boundary';
-
-const API_URL = 'http://localhost:5000';
+import { Device } from './components/Device/Device';
 
 // Types
 interface Device {
@@ -39,11 +36,13 @@ interface DnsResult {
   error?: string;
 }
 
-interface DevicesUpdateData {
-  devices: Device[];
-}
+// interface DevicesUpdateData {
+//   devices: Device[];
+// }
 
 type TabType = 'dashboard' | 'devices' | 'wifi' | 'dns';
+const API_URL = 'http://localhost:5000/';
+const networkInfoUrl = `${API_URL}/api/network/info`;
 
 const App: React.FC = () => {
   // const [socket, setSocket] = useState<Socket | null>(null);
@@ -52,52 +51,53 @@ const App: React.FC = () => {
   const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([]);
   const [dnsResults, setDnsResults] = useState<DnsResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [devicesLoading, setDevicesLoading] = useState<boolean>(false);
   const [connected, setConnected] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  useEffect(() => {
-    // Initialize WebSocket connection
-    const socketInstance = io(API_URL);
+  // useEffect(() => {
+  //   // Initialize WebSocket connection
+  //   const socketInstance = io(API_URL);
 
-    // WebSocket event handlers
-    socketInstance.on('connect', () => {
-      setConnected(true);
-      console.log('Connected to backend');
-    });
+  //   // WebSocket event handlers
+  //   socketInstance.on('connect', () => {
+  //     setConnected(true);
+  //     console.log('Connected to backend');
+  //   });
 
-    socketInstance.on('disconnect', () => {
-      setConnected(false);
-      console.log('Disconnected from backend');
-    });
+  //   socketInstance.on('disconnect', () => {
+  //     setConnected(false);
+  //     console.log('Disconnected from backend');
+  //   });
 
-    socketInstance.on('devices_update', (data: DevicesUpdateData) => {
-      setDevices(data.devices);
-      setLastUpdate(new Date());
-    });
+  //   socketInstance.on('devices_update', (data: DevicesUpdateData) => {
+  //     setDevices(data.devices);
+  //     setLastUpdate(new Date());
+  //   });
 
-    // Initial data fetch
-    fetchNetworkInfo();
-    fetchDevices();
+  //   // Initial data fetch
+  //   fetchNetworkInfo();
+  //   fetchDevices();
 
-    // Cleanup on unmount
-    return () => {
-      socketInstance.disconnect();
-    };
-  }, []);
+  //   // Cleanup on unmount
+  //   return () => {
+  //     socketInstance.disconnect();
+  //   };
+  // }, []);
 
-  const fetchNetworkInfo = async (): Promise<void> => {
-    try {
-      const response = await fetch(`${API_URL}/api/network/info`);
-      const data: NetworkInfo = await response.json();
-      setNetworkInfo(data);
-    } catch (error) {
-      console.error('Error fetching network info:', error);
-    }
-  };
+  // const fetchNetworkInfo = async (): Promise<void> => {
+  //   try {
+  //     const response = await fetch(`${API_URL}/api/network/info`);
+  //     const data: NetworkInfo = await response.json();
+  //     setNetworkInfo(data);
+  //   } catch (error) {
+  //     console.error('Error fetching network info:', error);
+  //   }
+  // };
 
   const fetchDevices = async (): Promise<void> => {
-    setLoading(true);
+    setDevicesLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/devices`);
       const data: { devices: Device[] } = await response.json();
@@ -106,7 +106,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Error fetching devices:', error);
     }
-    setLoading(false);
+    setDevicesLoading(false);
   };
 
   const scanNetwork = async (): Promise<void> => {
@@ -164,6 +164,25 @@ const App: React.FC = () => {
     if (signal > 40) return 'bg-yellow-500';
     return 'bg-red-500';
   };
+  // const [data, setData] = useState<NetworkInfo>();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const fetchData = async () => {
+      const resp = await fetch(networkInfoUrl);
+        if (!resp.ok) {
+          setIsLoading(false);
+          throw new Error(`HTTP error! status: ${resp.status}`);
+      }
+      const respJson = await resp.json() as NetworkInfo;
+      setNetworkInfo(respJson);
+      setIsLoading(false);
+  }
+    
+  useEffect(() => {
+      fetchData();
+      fetchDevices();
+      setConnected(true);
+  },[]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -218,33 +237,40 @@ const App: React.FC = () => {
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
             {/* Network Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card>
-                <ErrorBoundary fallback={<div>Something went wrong</div>}>
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <Device 
-                      label={'Local IP'} 
-                      icon={<Globe className="w-6 h-6 text-blue-400" />} 
-                    />
-                  </Suspense>
-                </ErrorBoundary>
+                  <Device 
+                    label={'Local IP'} 
+                    icon={ <Globe stroke='var(--color-blue-400)' 
+                      className="w-6 h-6 text-transparent" /> } 
+                    value={networkInfo?.local_ip || 'error!'}
+                    isLoading={isLoading}
+                  />
               </Card>
               <Card>
-                <div className="flex items-center space-x-3 mb-2">
-                  <Network className="w-6 h-6 text-green-400" />
-                  <h3 className="text-lg font-semibold">Gateway</h3>
-                </div>
-                <p className="text-2xl font-mono text-green-300">{networkInfo.gateway || 'Loading...'}</p>
+                <Device 
+                    label={'Gateway'} 
+                    icon={ <Network stroke={`var(--color-green-400)`} className="w-6 h-6 text-transparent" /> } 
+                    value={networkInfo?.gateway || 'error!'}
+                    isLoading={isLoading}
+                  />
               </Card>
-
               <Card>
-                <div className="flex items-center space-x-3 mb-2">
-                  <Activity className="w-6 h-6 text-purple-400" />
-                  <h3 className="text-lg font-semibold">Active Devices</h3>
-                </div>
-                <p className="text-2xl font-mono text-purple-300">
-                  {devices.filter(d => d.status === 'online').length}
-                </p>
+                <Device 
+                    label={'Subnet'} 
+                    icon={ <VenetianMask stroke={`var(--color-purple-400)`} className="w-6 h-6 text-transparent" /> } 
+                    value={networkInfo?.subnet || 'error!'}
+                    isLoading={isLoading}
+                  />
+              </Card>
+              <Card>
+                <Device 
+                  label={'Devices'} 
+                  icon={ <Activity stroke={`var(--color-amber-400)`} className="w-6 h-6 text-transparent" />} 
+                  value={devices.filter(d => d.status === 'online').length.toString() || 'error!'}
+                  isLoading={devicesLoading}
+                />
+               
               </Card>
             </div>
 

@@ -1,5 +1,5 @@
 import time
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Blueprint
 from dotenv import load_dotenv
 from datetime import datetime
 from utils import get_local_ip, get_gateway, ping_host, scan_network
@@ -10,29 +10,28 @@ import subprocess
 
 load_dotenv()
 
-app = Flask(__name__)
-
+routes = Blueprint("routes", __name__)
  # Define a route for the home page ("/")
-@app.route('/')
+@routes.route('/')
 def homepage():
-    return 'hello world'
+    return 'hello world 2'
 
-@app.route('/api/health')
+@routes.route('/api/health')
 def health():
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
 
-@app.route('/api/network/info')
+@routes.route('/api/network/info')
 def network_info():
     local_ip = get_local_ip()
     gateway = get_gateway()
     
     return jsonify({
-        'local_ip': request.remote_addr,
+        'local_ip': local_ip,
         'gateway': gateway,
         'subnet': '.'.join(local_ip.split('.')[:-1]) + '.0/24'
     })
 
-@app.route('/api/devices')
+@routes.route('/api/devices')
 def get_devices():
     conn = get_db()
     c = conn.cursor()
@@ -42,12 +41,12 @@ def get_devices():
     
     return jsonify({'devices': devices})
 
-@app.route('/api/scan/network', methods=['POST'])
+@routes.route('/api/scan/network', methods=['POST'])
 def trigger_scan():
     devices = scan_network()
     return jsonify({'devices': devices, 'count': len(devices)})
 
-@app.route('/api/ping/<ip>')
+@routes.route('/api/ping/<ip>')
 def ping(ip):
     # Validate IP
     if not re.match(r'^[\d.]+$', ip):
@@ -56,7 +55,7 @@ def ping(ip):
     is_alive = ping_host(ip)
     return jsonify({'ip': ip, 'status': 'online' if is_alive else 'offline'})
 
-@app.route('/api/dns/test')
+@routes.route('/api/dns/test')
 def dns_test():
     """Test DNS resolution"""
     import socket
@@ -84,7 +83,7 @@ def dns_test():
     
     return jsonify({'results': results})
 
-@app.route('/api/wifi/scan')
+@routes.route('/api/wifi/scan')
 def wifi_scan():
     """Scan for WiFi networks (platform specific)"""
     networks = []

@@ -70,6 +70,7 @@ network-diagnostics/
 ### Prerequisites
 - Docker and Docker Compose installed
 - (Optional) Node.js 18+ and Python 3.11+ for local development
+- **If the ap is running in WSL2, WSL network more needs to be set to 'mirrored' in order to show the correct ips.**
 
 ### Quick Start with Docker (Recommended)
 
