@@ -1,39 +1,38 @@
+import scapy.all as scapy
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt
+from scapy.layers.l2 import ARP, Ether
+from platform import system
+from subprocess import run
+import re
 import subprocess
 import time
 # from app import socketio
 from database import get_db
 from datetime import datetime
-from platform import system
-from subprocess import run
-import re
-import os
+
+from backend.database import get_db
+
+def get_local_ifaces():
+    return scapy.conf.ifaces
 
 def get_local_ip():
-    """Get local IP address"""
-    try:
-        import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        if ip:
-            return ip
-        else:
-            return f'No ip found'
-    except:
-        return "127.0.0.1"
+    default_if = scapy.conf.route.route(scapy.conf.iface.ip)[1]
+    return default_if
 
 def get_gateway():
     try:
-        result = os.popen('ip route').read()
-        for line in result.splitlines():
-            if 'default via' in line:
-                parts = line.split()
-                if 'via' in parts:
-                    return parts[parts.index('via') + 1]
-    except subprocess.CalledProcessError:
-        return None
-    return None
+        hip = None
+        with open("/proc/self/net/route") as routes:
+            for line in routes:
+                parts = line.split('\t')
+                if '00000000' == parts[1]:
+                    hip = parts[2]
+
+        if hip is not None and len(hip) == 8:
+            # Reverse order, convert hex to int
+            return "%i.%i.%i.%i" % (int(hip[6:8], 16), int(hip[4:6], 16), int(hip[2:4], 16), int(hip[0:2], 16))
+    except Exception:
+        print("Error getting default gateway (get_gateway)")
 
 def ping_host(ip):
     """Ping a host to check if it's alive"""

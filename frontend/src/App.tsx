@@ -1,158 +1,69 @@
-import { useState, useEffect } from 'react';
-import { Wifi, Network, Globe, RefreshCw, CheckCircle, XCircle, Clock, Activity, VenetianMask } from 'lucide-react';
-// import io from 'socket.io-client';
-import Card from './components/Card/Card';
-import { Device } from './components/Device/Device';
+import { useState, useEffect, type FunctionComponent } from 'react';
+import { Wifi, Network, Globe, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Dashboard } from './components/Dashboard/Dashboard';
+import ROUTES from './routes';
+import { fetchResource } from './utils';
+import { useQuery } from '@tanstack/react-query';
+import type { TabType, IscanInfo, TDevices, TDNSResults, TWifiNetworks } from './App.types';
+import type { INetworkInfo } from './hooks/useNetworkInfo';
 
-// Types
-interface Device {
-  id?: number;
-  ip: string;
-  mac?: string;
-  hostname?: string;
-  vendor?: string;
-  last_seen?: string;
-  status: string;
-}
-
-interface NetworkInfo {
-  local_ip?: string;
-  gateway?: string;
-  subnet?: string;
-}
-
-interface WifiNetwork {
-  ssid: string;
-  signal: number;
-  channel?: number;
-  security?: string;
-}
-
-interface DnsResult {
-  domain: string;
-  ip?: string;
-  time_ms?: number;
-  status: 'success' | 'failed';
-  error?: string;
-}
-
-// interface DevicesUpdateData {
-//   devices: Device[];
-// }
-
-type TabType = 'dashboard' | 'devices' | 'wifi' | 'dns';
-const API_URL = 'http://localhost:5000/';
-const networkInfoUrl = `${API_URL}/api/network/info`;
-
-const App: React.FC = () => {
-  // const [socket, setSocket] = useState<Socket | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [networkInfo, setNetworkInfo] = useState<NetworkInfo>({});
-  const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([]);
-  const [dnsResults, setDnsResults] = useState<DnsResult[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [devicesLoading, setDevicesLoading] = useState<boolean>(false);
+const App: FunctionComponent = () => {
   const [connected, setConnected] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date>();
+  const headers = new Headers({
+    
+    'Access-Control-Allow-Origin': ROUTES.ORIGIN,
+    // 'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Method': '*',
+    'Access-Control-Allow-Headers': 'Access-Control-Allow-Origin, Access-Control-Allow-Credentials, access-control-allow-method',
+    
+  })
+  const scanDNSRequest = new Request(ROUTES.DNS_TEST, {
+    method: 'GET',
+    headers
+  });
+  const networkInfoRequest = new Request(ROUTES.NETWORK_INFO, {
+    method: 'GET',
+    headers
+  });
+  const devicesRequest = new Request(ROUTES.DEVICES, {
+    method: 'GET',
+    headers
+  });
+  const scanNetworkRequest = new Request(ROUTES.SCAN_NETWORK, {
+    method: 'POST',
+    headers
+  });
+  const scanWifiRequest = new Request(ROUTES.SCAN_WIFI, {
+    method: 'GET',
+    headers
+  });
+  const scanNetwork = useQuery({ 
+      queryKey: ['scan network'], 
+      queryFn: () => fetchResource<IscanInfo>(scanNetworkRequest),
+  });
+  const scanWifi = useQuery({ 
+      queryKey: ['scan wifi'], 
+      queryFn: () => fetchResource<TWifiNetworks>(scanWifiRequest),
+  });
+  const scanDNS = useQuery({ 
+      queryKey: ['scan DNS'], 
+      queryFn: () => fetchResource<TDNSResults>(scanDNSRequest),
+  });
+  const networkInfo = useQuery({ 
+      queryKey: ['Net Info'], 
+      queryFn: () => fetchResource<INetworkInfo>(networkInfoRequest)
+  });
+  const devices = useQuery({ 
+      queryKey: ['devices'], 
+      queryFn: () => fetchResource<TDevices>(devicesRequest)
+  });
 
-  // useEffect(() => {
-  //   // Initialize WebSocket connection
-  //   const socketInstance = io(API_URL);
-
-  //   // WebSocket event handlers
-  //   socketInstance.on('connect', () => {
-  //     setConnected(true);
-  //     console.log('Connected to backend');
-  //   });
-
-  //   socketInstance.on('disconnect', () => {
-  //     setConnected(false);
-  //     console.log('Disconnected from backend');
-  //   });
-
-  //   socketInstance.on('devices_update', (data: DevicesUpdateData) => {
-  //     setDevices(data.devices);
-  //     setLastUpdate(new Date());
-  //   });
-
-  //   // Initial data fetch
-  //   fetchNetworkInfo();
-  //   fetchDevices();
-
-  //   // Cleanup on unmount
-  //   return () => {
-  //     socketInstance.disconnect();
-  //   };
-  // }, []);
-
-  // const fetchNetworkInfo = async (): Promise<void> => {
-  //   try {
-  //     const response = await fetch(`${API_URL}/api/network/info`);
-  //     const data: NetworkInfo = await response.json();
-  //     setNetworkInfo(data);
-  //   } catch (error) {
-  //     console.error('Error fetching network info:', error);
-  //   }
-  // };
-
-  const fetchDevices = async (): Promise<void> => {
-    setDevicesLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/devices`);
-      const data: { devices: Device[] } = await response.json();
-      setDevices(data.devices);
-      setLastUpdate(new Date());
-    } catch (error) {
-      console.error('Error fetching devices:', error);
-    }
-    setDevicesLoading(false);
-  };
-
-  const scanNetwork = async (): Promise<void> => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/scan/network`, {
-        method: 'POST'
-      });
-      const data: { devices: Device[] } = await response.json();
-      setDevices(data.devices);
-      setLastUpdate(new Date());
-    } catch (error) {
-      console.error('Error scanning network:', error);
-    }
-    setLoading(false);
-  };
-
-  const scanWifi = async (): Promise<void> => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/wifi/scan`);
-      const data: { networks?: WifiNetwork[] } = await response.json();
-      setWifiNetworks(data.networks || []);
-    } catch (error) {
-      console.error('Error scanning WiFi:', error);
-      alert('WiFi scanning may require elevated privileges');
-    }
-    setLoading(false);
-  };
-
-  const testDNS = async (): Promise<void> => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/dns/test`);
-      const data: { results: DnsResult[] } = await response.json();
-      setDnsResults(data.results);
-    } catch (error) {
-      console.error('Error testing DNS:', error);
-    }
-    setLoading(false);
-  };
-
-  const getStatusColor = (status: string): string => {
-    return status === 'online' ? 'text-green-500' : 'text-red-500';
-  };
-
+  const handleScanNetwork = () => scanNetwork.refetch()
+  const handleScanWifi = () => scanWifi.refetch();
+  const handleScanDNS = () => scanDNS.refetch();
+  
   const getSignalStrength = (signal: number): string => {
     if (signal > 70) return 'text-green-500';
     if (signal > 40) return 'text-yellow-500';
@@ -165,25 +76,12 @@ const App: React.FC = () => {
     return 'bg-red-500';
   };
   // const [data, setData] = useState<NetworkInfo>();
-  const [isLoading, setIsLoading] = useState(true);
   
-  const fetchData = async () => {
-      const resp = await fetch(networkInfoUrl);
-        if (!resp.ok) {
-          setIsLoading(false);
-          throw new Error(`HTTP error! status: ${resp.status}`);
-      }
-      const respJson = await resp.json() as NetworkInfo;
-      setNetworkInfo(respJson);
-      setIsLoading(false);
-  }
-    
   useEffect(() => {
-      fetchData();
-      fetchDevices();
       setConnected(true);
+      setLastUpdate(new Date());
   },[]);
-
+  
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       {/* Header */}
@@ -234,112 +132,26 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Dashboard Tab */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            {/* Network Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                  <Device 
-                    label={'Local IP'} 
-                    icon={ <Globe stroke='var(--color-blue-400)' 
-                      className="w-6 h-6 text-transparent" /> } 
-                    value={networkInfo?.local_ip || 'error!'}
-                    isLoading={isLoading}
-                  />
-              </Card>
-              <Card>
-                <Device 
-                    label={'Gateway'} 
-                    icon={ <Network stroke={`var(--color-green-400)`} className="w-6 h-6 text-transparent" /> } 
-                    value={networkInfo?.gateway || 'error!'}
-                    isLoading={isLoading}
-                  />
-              </Card>
-              <Card>
-                <Device 
-                    label={'Subnet'} 
-                    icon={ <VenetianMask stroke={`var(--color-purple-400)`} className="w-6 h-6 text-transparent" /> } 
-                    value={networkInfo?.subnet || 'error!'}
-                    isLoading={isLoading}
-                  />
-              </Card>
-              <Card>
-                <Device 
-                  label={'Devices'} 
-                  icon={ <Activity stroke={`var(--color-amber-400)`} className="w-6 h-6 text-transparent" />} 
-                  value={devices.filter(d => d.status === 'online').length.toString() || 'error!'}
-                  isLoading={devicesLoading}
-                />
-               
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card>
-              <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={scanNetwork}
-                  disabled={loading}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
-                >
-                  <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Scan Network</span>
-                </button>
-                <button
-                  onClick={scanWifi}
-                  disabled={loading}
-                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
-                >
-                  <Wifi className="w-5 h-5" />
-                  <span>Scan WiFi</span>
-                </button>
-                <button
-                  onClick={testDNS}
-                  disabled={loading}
-                  className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
-                >
-                  <Globe className="w-5 h-5" />
-                  <span>Test DNS</span>
-                </button>
-              </div>
-            </Card>
-
-            {/* Recent Devices */}
-            <Card>
-              <h3 className="text-xl font-semibold mb-4">Recent Devices</h3>
-              <div className="space-y-2">
-                {devices.slice(0, 5).map((device, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <span className="font-mono">{device.ip}</span>
-                      <span className="text-gray-400 text-sm">{device.mac || 'Unknown'}</span>
-                    </div>
-                    <span className={`text-sm ${getStatusColor(device.status)}`}>
-                      {device.status}
-                    </span>
-                  </div>
-                ))}
-                {devices.length === 0 && (
-                  <p className="text-center text-gray-400 py-4">No devices detected yet</p>
-                )}
-              </div>
-            </Card>
-          </div>
-        )}
-
+          {activeTab === 'dashboard' && 
+              <Dashboard 
+                network={networkInfo} 
+                devices={devices} 
+                scanNetwork={scanNetwork} 
+                scanWifi={scanWifi} 
+                scanDNS={scanDNS} 
+              />
+          }
         {/* Devices Tab */}
         {activeTab === 'devices' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Network Devices</h2>
               <button
-                onClick={scanNetwork}
-                disabled={loading}
+                onClick={handleScanNetwork}
+                disabled={scanNetwork.isPending}
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${scanNetwork.isPending ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
             </div>
@@ -356,7 +168,7 @@ const App: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {devices.map((device, idx) => (
+                  {devices.data?.devices?.map((device, idx) => (
                     <tr key={idx} className="hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         {device.status === 'online' ? (
@@ -375,7 +187,7 @@ const App: React.FC = () => {
                   ))}
                 </tbody>
               </table>
-              {devices.length === 0 && (
+              {devices.data?.count === 0 && (
                 <div className="text-center py-12 text-gray-400">
                   No devices found. Click "Refresh" to scan the network.
                 </div>
@@ -390,8 +202,8 @@ const App: React.FC = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">WiFi Networks</h2>
               <button
-                onClick={scanWifi}
-                disabled={loading}
+                onClick={handleScanWifi}
+                disabled={scanWifi.isPending}
                 className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
               >
                 <Wifi className="w-4 h-4" />
@@ -400,7 +212,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {wifiNetworks.map((network, idx) => (
+              {scanWifi.data?.map((network, idx) => (
                 <div key={idx} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center space-x-2">
@@ -425,7 +237,7 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
-            {wifiNetworks.length === 0 && (
+            {scanWifi.data?.length === 0 && (
               <div className="bg-gray-800 rounded-lg p-12 border border-gray-700 text-center">
                 <Wifi className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400">No WiFi networks found. Click "Scan WiFi" to search.</p>
@@ -441,8 +253,8 @@ const App: React.FC = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">DNS Diagnostics</h2>
               <button
-                onClick={testDNS}
-                disabled={loading}
+                onClick={handleScanDNS}
+                disabled={scanDNS.isPending}
                 className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
               >
                 <Globe className="w-4 h-4" />
@@ -451,7 +263,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dnsResults.map((result, idx) => (
+              {scanDNS.data?.map((result, idx) => (
                 <div key={idx} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-lg">{result.domain}</h3>
@@ -480,7 +292,7 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
-            {dnsResults.length === 0 && (
+            {scanDNS.data?.length === 0 && (
               <div className="bg-gray-800 rounded-lg p-12 border border-gray-700 text-center">
                 <Globe className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400">No DNS tests performed yet. Click "Test DNS" to start.</p>

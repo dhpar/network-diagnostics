@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "docker:build": "docker-compose up --build", 
+    "docker:build": "docker-compose up --build",
     "docker:watch": "docker-compose up --watch",
-    "penv": "./backend/venv/bin/activate && python ./backend/app.py"
+    "penv": "/backend/venv/bin/activate && python /backend/app.py"
   },
   "repository": {
     "type": "git",
@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/dhpar/network-diagnostics#readme",
   "workspaces": [
-    "frontend"
+    "frontend",
+    "backend"
   ]
 }

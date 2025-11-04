@@ -7,14 +7,13 @@ from database import get_db
 import platform
 import re
 import subprocess
+import nmcli
+import scapy.all as scapy
+import pywifi
 
 load_dotenv()
 
 routes = Blueprint("routes", __name__)
- # Define a route for the home page ("/")
-@routes.route('/')
-def homepage():
-    return 'hello world 2'
 
 @routes.route('/api/health')
 def health():
@@ -33,18 +32,16 @@ def network_info():
 
 @routes.route('/api/devices')
 def get_devices():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('SELECT * FROM devices ORDER BY last_seen DESC')
-    devices = [dict(row) for row in c.fetchall()]
-    conn.close()
-    
+    devices = scan_network()
     return jsonify({'devices': devices})
 
 @routes.route('/api/scan/network', methods=['POST'])
 def trigger_scan():
     devices = scan_network()
+    if not devices:
+        return jsonify({'error': 'No devices found'})
     return jsonify({'devices': devices, 'count': len(devices)})
+    
 
 @routes.route('/api/ping/<ip>')
 def ping(ip):
@@ -87,11 +84,11 @@ def dns_test():
 def wifi_scan():
     """Scan for WiFi networks (platform specific)"""
     networks = []
-    
+    results = subprocess.check_output(["netsh", "wlan", "show", "network"], shell=True)
+    print(f"{results}")
     try:
         if platform.system() == "Windows":
-            result = subprocess.run(['netsh', 'wlan', 'show', 'networks', 'mode=bssid'], 
-                                  capture_output=True, text=True)
+            result = subprocess.run(['netsh', 'wlan', 'show', 'networks', 'mode=bssid'], capture_output=True, text=True)
             # Parse Windows WiFi output
             current_ssid = None
             for line in result.stdout.split('\n'):
@@ -109,16 +106,11 @@ def wifi_scan():
                         current_ssid = None
         else:
             # Linux/Mac - requires sudo/admin for detailed scan
-            result = subprocess.run(['nmcli', '-t', '-f', 'SSID,SIGNAL', 'dev', 'wifi'], 
-                                  capture_output=True, text=True)
-            for line in result.stdout.split('\n'):
-                if ':' in line:
-                    parts = line.split(':')
-                    if len(parts) >= 2 and parts[0]:
-                        networks.append({
-                            'ssid': parts[0],
-                            'signal': int(parts[1]) if parts[1].isdigit() else 0
-                        })
+            result = nmcli.device.show(scapy.conf.iface.description) 
+            for line in result:
+                networks.append({
+                    'ssid': line,
+                })
     except Exception as e:
         print(f"WiFi scan error: {e}")
         return jsonify({'error': 'WiFi scanning requires elevated privileges or is not supported'}), 500
