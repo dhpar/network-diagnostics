@@ -1,6 +1,6 @@
 # Network Diagnostics Tool - MVP
 
-A locally-hosted web application for diagnosing and monitoring network issues with real-time visualization.
+Locally-hosted web app for diagnosing and monitoring network issues in real-time — device discovery, WiFi scanning, DNS testing, and WebSocket-based live updates.
 
 ## Features (MVP)
 
