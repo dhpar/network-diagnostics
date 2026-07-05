@@ -13,22 +13,22 @@ I'm still actively building this, here's what works so far:
 
 ## Features (MVP)
 
-✅ **Network Discovery**
+**Network Discovery**
 - Automatic device detection via ARP scanning
 - Real-time device status monitoring
 - Gateway and local IP identification
 
-✅ **WiFi Scanning**
+**WiFi Scanning**
 - Scan available WiFi networks
 - Signal strength visualization
 - Channel information
 
-✅ **DNS Diagnostics**
+**DNS Diagnostics**
 - DNS resolution testing
 - Response time measurement
 - Multi-domain testing
 
-✅ **Real-time Updates**
+**Real-time Updates**
 - WebSocket-based live updates
 - Background network scanning
 - Automatic device refresh
