@@ -1,15 +1,11 @@
 import time
-from flask import Flask, jsonify, request, Blueprint
+from flask import jsonify, Blueprint
 from dotenv import load_dotenv
 from datetime import datetime
-from utils import get_local_ip, get_gateway, ping_host, scan_network
-from database import get_db
-import platform
+from utils import get_local_ip, get_gateway, ping_host, scan_network, get_net_mask
 import re
-import subprocess
-import nmcli
 import scapy.all as scapy
-import pywifi
+from wifi import get_wifi_scan_from_windows
 
 load_dotenv()
 
@@ -23,11 +19,11 @@ def health():
 def network_info():
     local_ip = get_local_ip()
     gateway = get_gateway()
-    
+    net_msk = get_net_mask()
     return jsonify({
         'local_ip': local_ip,
         'gateway': gateway,
-        'subnet': '.'.join(local_ip.split('.')[:-1]) + '.0/24'
+        'subnet': '.'.join(local_ip.split('.')[:-1]) + f'.0/{net_msk}'
     })
 
 @routes.route('/api/devices')
@@ -82,37 +78,10 @@ def dns_test():
 
 @routes.route('/api/wifi/scan')
 def wifi_scan():
-    """Scan for WiFi networks (platform specific)"""
-    networks = []
-    results = subprocess.check_output(["netsh", "wlan", "show", "network"], shell=True)
-    print(f"{results}")
+    """Scan for nearby WiFi networks via native Windows Python (WSL has no radio access)"""
     try:
-        if platform.system() == "Windows":
-            result = subprocess.run(['netsh', 'wlan', 'show', 'networks', 'mode=bssid'], capture_output=True, text=True)
-            # Parse Windows WiFi output
-            current_ssid = None
-            for line in result.stdout.split('\n'):
-                if 'SSID' in line and 'BSSID' not in line:
-                    match = re.search(r'SSID \d+ : (.+)', line)
-                    if match:
-                        current_ssid = match.group(1).strip()
-                elif 'Signal' in line and current_ssid:
-                    match = re.search(r'(\d+)%', line)
-                    if match:
-                        networks.append({
-                            'ssid': current_ssid,
-                            'signal': int(match.group(1))
-                        })
-                        current_ssid = None
-        else:
-            # Linux/Mac - requires sudo/admin for detailed scan
-            result = nmcli.device.show(scapy.conf.iface.description) 
-            for line in result:
-                networks.append({
-                    'ssid': line,
-                })
+        networks = get_wifi_scan_from_windows()
+        return jsonify({'networks': networks, 'count': len(networks)})
     except Exception as e:
         print(f"WiFi scan error: {e}")
-        return jsonify({'error': 'WiFi scanning requires elevated privileges or is not supported'}), 500
-    
-    return jsonify({'networks': networks, 'count': len(networks)})
+        return jsonify({'error': 'WiFi scanning requires a native Windows Python with pywifi installed'}), 500

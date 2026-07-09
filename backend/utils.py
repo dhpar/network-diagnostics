@@ -1,16 +1,13 @@
 import scapy.all as scapy
-from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt
 from scapy.layers.l2 import ARP, Ether
 from platform import system
 from subprocess import run
 import re
-import subprocess
 import time
 # from app import socketio
 from database import get_db
 from datetime import datetime
-
-from backend.database import get_db
+import netifaces
 
 def get_local_ifaces():
     return scapy.conf.ifaces
@@ -33,6 +30,21 @@ def get_gateway():
             return "%i.%i.%i.%i" % (int(hip[6:8], 16), int(hip[4:6], 16), int(hip[2:4], 16), int(hip[0:2], 16))
     except Exception:
         print("Error getting default gateway (get_gateway)")
+
+def get_net_mask():
+    # Get the default interface Scapy is currently using
+    default_iface = scapy.conf.iface 
+    # Fetch all addresses assigned to the default interface
+    addrs = netifaces.ifaddresses(default_iface.name)
+    ipv4_info = addrs.get(netifaces.AF_INET, [])
+    
+    if ipv4_info:
+        netmask = ipv4_info[0].get('netmask')
+        if netmask is not None:
+            prefixed_mask = sum(bin(int(octet)).count('1') for octet in netmask.split('.'))
+            return prefixed_mask
+        else: 
+            return 'the net mask doesn\'t exists'
 
 def ping_host(ip):
     """Ping a host to check if it's alive"""
@@ -77,28 +89,36 @@ def get_arp_table():
     return devices
 
 def scan_network():
-    """Scan local network for devices"""
+    """Scan local network for devices using a broadcast ARP request (scapy).
+
+    This sends a single ARP 'who-has' broadcast across the /24 subnet and
+    collects replies, which is both faster and more reliable than pinging
+    each host, since some devices block ICMP but must still answer ARP to
+    participate on the network at all.
+
+    Note: assumes a /24 (255.255.255.0) subnet. If your network uses a
+    different mask, adjust the `subnet` line below accordingly.
+    Requires elevated privileges (sudo) since it sends raw Ethernet frames.
+    """
     local_ip = get_local_ip()
     network_prefix = '.'.join(local_ip.split('.')[:-1])
-    
+    subnet = f"{network_prefix}.0/24"
+    iface = scapy.conf.route.route(local_ip)[0]
+
+    arp_request = ARP(pdst=subnet)
+    broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
+    packet = broadcast / arp_request
+
+    answered, _ = scapy.srp(packet, timeout=3, iface=iface, verbose=0)
+
     devices = []
-    # Quick scan of common IPs first
-    for i in [1, 2, 254]:  # Gateway candidates
-        ip = f"{network_prefix}.{i}"
-        if ping_host(ip):
-            devices.append({'ip': ip, 'status': 'online'})
-    
-    # Get devices from ARP table
-    arp_devices = get_arp_table()
-    for device in arp_devices:
-        if device not in devices:
-            is_online = ping_host(device['ip'])
-            devices.append({
-                'ip': device['ip'],
-                'mac': device['mac'],
-                'status': 'online' if is_online else 'offline'
-            })
-    
+    for _, received in answered:
+        devices.append({
+            'ip': received.psrc,
+            'mac': received.hwsrc,
+            'status': 'online'
+        })
+
     return devices
 
 # Background network scanning
@@ -106,9 +126,13 @@ def background_scan():
     while True:
         try:
             devices = scan_network()
+            seen_ips = {device['ip'] for device in devices}
             conn = get_db()
             c = conn.cursor()
-            
+            now = datetime.now()
+
+            # Upsert every device that answered this cycle's ARP scan as online.
+            # last_seen is bumped to now, since we just confirmed it's alive.
             for device in devices:
                 c.execute('''INSERT OR REPLACE INTO devices 
                             (ip, mac, hostname, status, last_seen) 
@@ -116,9 +140,25 @@ def background_scan():
                          (device['ip'], 
                           device.get('mac', 'Unknown'),
                           device.get('hostname', 'Unknown'),
-                          device['status'],
-                          datetime.now()))
-            
+                          'online',
+                          now))
+
+            # Anything previously known that didn't answer this scan gets marked
+            # offline (but keeps its old last_seen, since that's the last time it
+            # was ACTUALLY seen, not right now). Without this, a device that drops
+            # off the network would stay 'online' in the DB forever, since
+            # scan_network() only ever reports devices that DID respond.
+            if seen_ips:
+                placeholders = ','.join('?' * len(seen_ips))
+                c.execute(
+                    f"UPDATE devices SET status = 'offline' "
+                    f"WHERE ip NOT IN ({placeholders}) AND status != 'offline'",
+                    tuple(seen_ips)
+                )
+            else:
+                # Nothing answered this cycle at all (e.g. network hiccup)
+                c.execute("UPDATE devices SET status = 'offline' WHERE status != 'offline'")
+
             conn.commit()
             conn.close()
             
