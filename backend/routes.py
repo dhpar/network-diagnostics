@@ -29,15 +29,10 @@ def network_info():
 @routes.route('/api/devices')
 def get_devices():
     devices = scan_network()
-    return jsonify({'devices': devices})
-
-@routes.route('/api/scan/network', methods=['POST'])
-def trigger_scan():
-    devices = scan_network()
     if not devices:
         return jsonify({'error': 'No devices found'})
     return jsonify({'devices': devices, 'count': len(devices)})
-    
+
 
 @routes.route('/api/ping/<ip>')
 def ping(ip):
@@ -74,7 +69,7 @@ def dns_test():
                 'status': 'failed'
             })
     
-    return jsonify({'results': results})
+    return jsonify(results)
 
 @routes.route('/api/wifi/scan')
 def wifi_scan():

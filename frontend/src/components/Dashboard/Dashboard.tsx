@@ -4,15 +4,13 @@ import Card from "../Card/Card";
 import { Device } from "../Device/Device";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { INetworkInfo } from "../../hooks/useNetworkInfo";
-import type { IscanInfo, TDevices, TDNSResults, TWifiNetworks } from "../../App.types";
+import type { TDevices, TWifiNetworks } from "../../App.types";
 import { ErrorBoundary } from "react-error-boundary";
 
 interface IDashboard {
     network: UseQueryResult<INetworkInfo, Error>;
     devices: UseQueryResult<TDevices, Error>;
-    scanNetwork: UseQueryResult<IscanInfo, Error>;
     scanWifi: UseQueryResult<TWifiNetworks, Error>;
-    scanDNS: UseQueryResult<TDNSResults, Error>;
 }    
 
 export const Dashboard: FunctionComponent<IDashboard> = ({
@@ -26,28 +24,17 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
         data: devicesData, 
         isPending: isDevicesLoading, 
         isError: isDevicesError,
-        error: deviceskError
-    }, 
-    scanNetwork: {
-      isPending: isScanNetworkLoading, 
-      refetch: refetchScanNetwork
+        error: deviceskError,
+        refetch: refetchDevices
     }, 
     scanWifi: {
       isPending: isScanWifiLoading, 
       refetch: refetchScanWifi
-    }, 
-    scanDNS: {
-        isPending: isScanDNSLoading, 
-        refetch: refetchScanDNS
-    } 
+    }
 }) => {
     const getStatusColor = (status: string) => 
         status === 'online' ? 'text-green-500' : 'text-red-500';
-    const handleScanNetwork = () => refetchScanNetwork()
     const handleScanWifi = () => refetchScanWifi();
-    const handleScanDNS = () => refetchScanDNS();
-    console.log({devicesData});
-
     const devicesValue = devicesData && !isDevicesError? devicesData.devices.filter(d => d.status === 'online').length.toString() : deviceskError?.message || 'Error!';
     return ( 
         <div className="space-y-6">
@@ -104,30 +91,22 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
             <Card>
                 <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
                 <div className="flex flex-wrap gap-4">
-                <button
-                    onChange={handleScanNetwork}
-                    disabled={isScanNetworkLoading}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
-                >
-                    <RefreshCw className={`w-5 h-5 ${isScanNetworkLoading ? 'animate-spin' : ''}`} />
-                    <span>Scan Network</span>
-                </button>
-                <button
-                    onClick={handleScanWifi}
-                    disabled={isScanWifiLoading}
-                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
-                >
-                    <Wifi className="w-5 h-5" />
-                    <span>Scan WiFi</span>
-                </button>
-                <button
-                    onClick={handleScanDNS}
-                    disabled={isScanDNSLoading}
-                    className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
-                >
-                    <Globe className="w-5 h-5" />
-                    <span>Test DNS</span>
-                </button>
+                    <button
+                        onChange={() => refetchDevices()}
+                        disabled={isDevicesLoading}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
+                    >
+                        <RefreshCw className={`w-5 h-5 ${isDevicesLoading ? 'animate-spin' : ''}`} />
+                        <span>Scan Network</span>
+                    </button>
+                    <button
+                        onClick={handleScanWifi}
+                        disabled={isScanWifiLoading}
+                        className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
+                    >
+                        <Wifi className="w-5 h-5" />
+                        <span>Scan WiFi</span>
+                    </button>
                 </div>
             </Card>
 

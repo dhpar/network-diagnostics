@@ -8,7 +8,6 @@ export default {
     DASHBOARD: '/',
     NETWORK_INFO: `${API_URL}/api/network/info`,
     DEVICES: `${API_URL}/api/devices`,
-    SCAN_NETWORK: `${API_URL}/api/scan/network`,
     SCAN_WIFI: `${API_URL}/api/wifi/scan`,
     DNS_TEST: `${API_URL}/api/dns/test`,
 }
