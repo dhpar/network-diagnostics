@@ -5,6 +5,6 @@ interface Itab {
 
 export const Tab: FunctionComponent<Itab> = ({children}) => {
     return <div className="space-y-6">
-            {children}
-        </div>
+        {children}
+    </div>
 }

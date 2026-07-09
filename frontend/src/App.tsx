@@ -12,58 +12,58 @@ const App: FunctionComponent = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [lastUpdate, setLastUpdate] = useState<Date>();
   const headers = new Headers({
-    
     'Access-Control-Allow-Origin': ROUTES.ORIGIN,
-    // 'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Method': '*',
     'Access-Control-Allow-Headers': 'Access-Control-Allow-Origin, Access-Control-Allow-Credentials, access-control-allow-method',
     
   })
-  const scanDNSRequest = new Request(ROUTES.DNS_TEST, {
-    method: 'GET',
+  const getResource = (route:string) => new Request(route, {
+    method: 'get',
     headers
-  });
-  const networkInfoRequest = new Request(ROUTES.NETWORK_INFO, {
-    method: 'GET',
-    headers
-  });
-  const devicesRequest = new Request(ROUTES.DEVICES, {
-    method: 'GET',
-    headers
-  });
-  const scanNetworkRequest = new Request(ROUTES.SCAN_NETWORK, {
-    method: 'POST',
-    headers
-  });
-  const scanWifiRequest = new Request(ROUTES.SCAN_WIFI, {
-    method: 'GET',
-    headers
-  });
+  })
+  const scanDNSRequest = getResource(ROUTES.DNS_TEST);
+  const networkInfoRequest = getResource(ROUTES.NETWORK_INFO);
+  const devicesRequest = getResource(ROUTES.DEVICES);
+  const scanNetworkRequest = getResource(ROUTES.SCAN_NETWORK);
+  const scanWifiRequest = getResource(ROUTES.SCAN_WIFI);
+
   const scanNetwork = useQuery({ 
       queryKey: ['scan network'], 
       queryFn: () => fetchResource<IscanInfo>(scanNetworkRequest),
   });
   const scanWifi = useQuery({ 
       queryKey: ['scan wifi'], 
-      queryFn: () => fetchResource<TWifiNetworks>(scanWifiRequest),
+      queryFn: () => {
+        return fetchResource<TWifiNetworks>(scanWifiRequest)
+    },
+    enabled: false
   });
   const scanDNS = useQuery({ 
-      queryKey: ['scan DNS'], 
-      queryFn: () => fetchResource<TDNSResults>(scanDNSRequest),
+    queryKey: ['scan DNS'], 
+    queryFn: () => {
+      return fetchResource<TDNSResults>(scanDNSRequest)
+    },
+    enabled: false
   });
   const networkInfo = useQuery({ 
       queryKey: ['Net Info'], 
-      queryFn: () => fetchResource<INetworkInfo>(networkInfoRequest)
+      queryFn: () => {
+        return fetchResource<INetworkInfo>(networkInfoRequest)
+      }
   });
   const devices = useQuery({ 
       queryKey: ['devices'], 
-      queryFn: () => fetchResource<TDevices>(devicesRequest)
+      queryFn: () => {
+        return fetchResource<TDevices>(devicesRequest  
+      )}
   });
 
-  const handleScanNetwork = () => scanNetwork.refetch()
+  const handleScanNetwork = () => {
+    scanNetwork.refetch()
+  }
   const handleScanWifi = () => scanWifi.refetch();
   const handleScanDNS = () => scanDNS.refetch();
-  
+
   const getSignalStrength = (signal: number): string => {
     if (signal > 70) return 'text-green-500';
     if (signal > 40) return 'text-yellow-500';
@@ -115,7 +115,9 @@ const App: FunctionComponent = () => {
             {(['dashboard', 'devices', 'wifi', 'dns'] as TabType[]).map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab)
+                }}
                 className={`px-6 py-3 font-medium capitalize transition-colors ${
                   activeTab === tab
                     ? 'bg-gray-900 text-blue-400 border-b-2 border-blue-400'
@@ -148,7 +150,7 @@ const App: FunctionComponent = () => {
               <h2 className="text-2xl font-bold">Network Devices</h2>
               <button
                 onClick={handleScanNetwork}
-                disabled={scanNetwork.isPending}
+                disabled={scanNetwork.isLoading}
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
               >
                 <RefreshCw className={`w-4 h-4 ${scanNetwork.isPending ? 'animate-spin' : ''}`} />

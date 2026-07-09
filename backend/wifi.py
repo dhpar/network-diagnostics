@@ -10,7 +10,7 @@ def get_wifi_scan_from_windows():
     Shells out to a native Windows Python process to get real WiFi signal
     data, since WSL2 has no driver-level access to the wireless radio.
     """
-    script_path_wsl = " /home/david/coding/network-diagnostics/backend/windows/wifi_scan.py"
+    script_path_wsl = "/home/david/coding/network-diagnostics/backend/windows/wifi_scan.py"
 
     # python.exe can't understand /mnt/c/... paths, convert to C:\... first
     converted = subprocess.run(
