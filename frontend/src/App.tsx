@@ -1,66 +1,37 @@
 import { useState, type FunctionComponent } from 'react';
-import { Wifi, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import ROUTES from './routes';
-import { fetchResource } from './utils';
+import { fetchResource, getResource } from './utils';
 import { useQuery } from '@tanstack/react-query';
-import type { TabType, TDevices, TWifiNetworks } from './App.types';
+import type { TabType, TDevices } from './App.types';
 import type { INetworkInfo } from './hooks/useNetworkInfo';
 import { DNS } from './components/DNS/DNS';
 import Layout from './Layout';
+import { Devices } from './components/Devices/Devices';
+import { Traceroute } from './components/Traceroute/Traceroute';
+import { Wifi } from './components/Wifi/Wifi';
+import { Tabs } from './components/Tabs/Tabs';
 
 const App: FunctionComponent = () => {
+  const tabNames = ['dashboard', 'devices', 'wifi', 'DNS', 'traceroute'] as TabType[];
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const headers = new Headers({
-    'Access-Control-Allow-Origin': ROUTES.ORIGIN,
-    'Access-Control-Allow-Method': '*',
-    'Access-Control-Allow-Headers': 'Access-Control-Allow-Origin, Access-Control-Allow-Credentials, access-control-allow-method',
-    
-  })
-  const getResource = (route:string) => new Request(route, {
-    method: 'get',
-    headers
-  })
-  // const scanDNSRequest = getResource(ROUTES.DNS_TEST);
-  const networkInfoRequest = getResource(ROUTES.NETWORK_INFO);
   const devicesRequest = getResource(ROUTES.DEVICES);
-  const scanWifiRequest = getResource(ROUTES.SCAN_WIFI);
-  const scanWifi = useQuery({ 
-    queryKey: ['scan wifi'], 
-    queryFn: () => fetchResource<TWifiNetworks>(scanWifiRequest),
-    enabled: false
-  });
- 
-  const networkInfo = useQuery({ 
-      queryKey: ['Net Info'], 
-      queryFn: () => fetchResource<INetworkInfo>(networkInfoRequest)
-  });
   const devices = useQuery({ 
-      queryKey: ['devices'], 
-      queryFn: () => fetchResource<TDevices>(devicesRequest)
+    queryKey: ['devices'], 
+    queryFn: () => fetchResource<TDevices>(devicesRequest)
   });
-  const handleScanWifi = () => scanWifi.refetch();
-  const getSignalStrength = (signal: number): string => {
-    if (signal > 70) return 'text-green-500';
-    if (signal > 40) return 'text-yellow-500';
-    return 'text-red-500';
-  };
-  const getSignalBarColor = (signal: number): string => {
-    if (signal > 70) return 'bg-green-500';
-    if (signal > 40) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-  
-  
-  
+  const networkInfoRequest = getResource(ROUTES.NETWORK_INFO);  
+  const networkInfo = useQuery({ 
+    queryKey: ['Net Info'], 
+    queryFn: () => fetchResource<INetworkInfo>(networkInfoRequest)
+  });
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+    <Layout>
       <div className="min-h-screen bg-gray-900 text-gray-100">
-        {/* Navigation Tabs */}
-        {/* <nav className="bg-gray-800 border-b border-gray-700">
+        <nav className="bg-gray-800 border-b border-gray-700">
           <div className="container mx-auto px-4">
             <div className="flex space-x-1">
-              {(['dashboard', 'devices', 'wifi', 'DNS'] as TabType[]).map((tab) => (
+              {tabNames.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => {
@@ -77,128 +48,12 @@ const App: FunctionComponent = () => {
               ))}
             </div>
           </div>
-        </nav> */}
-
+        </nav>
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          {/* Dashboard Tab */}
-            {activeTab === 'dashboard' && 
-                <Dashboard 
-                  network={networkInfo} 
-                  devices={devices}  
-                  scanWifi={scanWifi}
-                />
-            }
-          {/* Devices Tab */}
-          {activeTab === 'devices' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Network Devices</h2>
-                <button
-                  onClick={() => devices.refetch}
-                  disabled={devices.isLoading}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-                >
-                  <RefreshCw className={`w-4 h-4 ${devices.isLoading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
-                </button>
-              </div>
-
-              <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">IP Address</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">MAC Address</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Hostname</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Last Seen</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-700">
-                    {devices.data?.devices?.map((device, idx) => (
-                      <tr key={idx} className="hover:bg-gray-700 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {device.status === 'online' ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          ) : (
-                            <XCircle className="w-5 h-5 text-red-500" />
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-mono text-blue-300">{device.ip}</td>
-                        <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-400">{device.mac || 'Unknown'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-300">{device.hostname || 'Unknown'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                          {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'N/A'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {devices.data?.count === 0 && (
-                  <div className="text-center py-12 text-gray-400">
-                    No devices found. Click "Refresh" to scan the network.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* WiFi Tab */}
-          {activeTab === 'wifi' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">WiFi Networks</h2>
-                <button
-                  onClick={handleScanWifi}
-                  disabled={scanWifi.isPending}
-                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Wifi className="w-4 h-4" />
-                  <span>Scan WiFi</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {scanWifi.data?.map((network, idx) => (
-                  <div key={idx} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <Wifi className={`w-5 h-5 ${getSignalStrength(network.signal)}`} />
-                        <h3 className="font-semibold text-lg truncate">{network.ssid}</h3>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-400 text-sm">Signal Strength</span>
-                        <span className={`font-mono ${getSignalStrength(network.signal)}`}>
-                          {network.signal}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${getSignalBarColor(network.signal)}`}
-                          style={{ width: `${network.signal}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {scanWifi.data?.length === 0 && (
-                <div className="bg-gray-800 rounded-lg p-12 border border-gray-700 text-center">
-                  <Wifi className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">No WiFi networks found. Click "Scan WiFi" to search.</p>
-                  <p className="text-gray-500 text-sm mt-2">Note: WiFi scanning may require elevated privileges</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* DNS Tab */}
-          {activeTab === 'DNS' && (
-            <DNS />
-          )}
+          <div className="space-y-6">
+            <Tabs activeTab={activeTab} devices={devices} network={networkInfo} />
+          </div>
         </main>
 
         {/* Footer */}

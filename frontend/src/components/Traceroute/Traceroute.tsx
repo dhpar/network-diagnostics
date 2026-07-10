@@ -5,7 +5,7 @@ import { fetchResource } from "../../utils";
 import ROUTES from '../../routes';
 import { CheckCircle, Globe, RefreshCw, XCircle } from "lucide-react";
 
-export const DNS:FunctionComponent<{}> = () => {
+export const Traceroute:FunctionComponent<{}> = () => {
     const getResource = (route:string) => new Request(
         route, 
         {
@@ -51,9 +51,9 @@ export const DNS:FunctionComponent<{}> = () => {
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-semibold text-lg">{result.domain}</h3>
                         {result.status === 'success' ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                            <CheckCircle className="w-5 h-5 text-green-500" />
                         ) : (
-                        <XCircle className="w-5 h-5 text-red-500" />
+                            <XCircle className="w-5 h-5 text-red-500" />
                         )}
                     </div>
                     {result.status === 'success' ? (

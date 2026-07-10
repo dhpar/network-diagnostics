@@ -1,59 +1,67 @@
 # Network Diagnostics Tool - MVP
 
-Locally-hosted web app for diagnosing and monitoring network issues in real-time, device discovery, WiFi scanning, DNS testing, and WebSocket-based live updates. 
+Locally-hosted web app for diagnosing and monitoring network issues in real-time, device discovery, WiFi scanning, DNS testing, and WebSocket-based live updates.
 
 I'm still actively building this, here's what works so far:
+
 - ✅ Initial project planning.
 - ✅ Project setup.
 - ✅ Frontend initial layout, look and feel.
 - ✅ Network Discovery.
-- ❌ WiFi Scanning
-- ❌ DNS Diagnostics
-- ❌ Real-time Updates
+- ✅ DNS Diagnostics.
+- ✅ Real-time Updates.
+- ❌ WiFi Scanning.
 
 ## Features (MVP)
 
-**Network Discovery**
+### Network Discovery
+
 - Automatic device detection via ARP scanning
 - Real-time device status monitoring
 - Gateway and local IP identification
 
-**WiFi Scanning**
+### WiFi Scanning
+
 - Scan available WiFi networks
 - Signal strength visualization
 - Channel information
 
-**DNS Diagnostics**
+### DNS Diagnostics
+
 - DNS resolution testing
 - Response time measurement
 - Multi-domain testing
 
-**Real-time Updates**
+### Real-time Updates
+
 - WebSocket-based live updates
 - Background network scanning
 - Automatic device refresh
 
 ## Tech Stack
 
-**Backend:**
+### Backend
+
 - Python 3.11
 - Flask + Flask-SocketIO
 - SQLite database
 - Network utilities (ping, arp, ip)
 
-**Frontend:**
+### Frontend
+
 - React 18 with TypeScript
 - Tailwind CSS
 - Socket.io-client
 - Lucide React (icons)
 
-**Infrastructure:**
+### Infrastructure
+
 - Docker & Docker Compose
 - Network mode: host (for network scanning)
 
 ## Project Structure
 
-```
+```bash
 network-diagnostics/
 ├── backend/
 │   ├── app.py                 # Flask application
@@ -77,6 +85,7 @@ network-diagnostics/
 ## Installation & Setup
 
 ### Prerequisites
+
 - Docker and Docker Compose installed
 - (Optional) Node.js 18+ and Python 3.11+ for local development
 - **If the ap is running in WSL2, WSL network more needs to be set to 'mirrored' in order to show the correct ips.**
@@ -84,6 +93,7 @@ network-diagnostics/
 ### Quick Start with Docker (Recommended)
 
 1. **Clone or create the project structure**
+
    ```bash
    mkdir network-diagnostics
    cd network-diagnostics
@@ -91,17 +101,19 @@ network-diagnostics/
    ```
 
 2. **Build and run with Docker Compose**
+
    ```bash
    docker-compose up --build
    ```
 
 3. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
+   - Frontend: <http://localhost:3000>
+   - Backend API: <http://localhost:5000>
 
 ### Local Development (Without Docker)
 
 #### Backend Setup
+
 ```bash
 cd backend
 python -m venv venv
@@ -111,6 +123,7 @@ python app.py
 ```
 
 #### Frontend Setup
+
 ```bash
 cd frontend
 npm install
@@ -120,22 +133,26 @@ npm start
 ## Usage
 
 ### Dashboard
+
 - View network overview with local IP, gateway, and active devices
 - Quick actions for scanning network, WiFi, and testing DNS
 - Real-time device updates
 
 ### Devices Tab
+
 - Complete list of discovered network devices
 - Status indicators (online/offline)
 - MAC addresses and hostnames
 - Last seen timestamps
 
 ### WiFi Tab
+
 - Available WiFi networks in range
 - Signal strength visualization
 - Real-time scanning
 
 ### DNS Tab
+
 - Test DNS resolution for common domains
 - Response time measurements
 - Success/failure indicators
@@ -143,7 +160,7 @@ npm start
 ## API Endpoints
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `/api/health` | GET | Health check |
 | `/api/network/info` | GET | Get local network information |
 | `/api/devices` | GET | List all discovered devices |
@@ -155,7 +172,7 @@ npm start
 ## WebSocket Events
 
 | Event | Direction | Description |
-|-------|-----------|-------------|
+| ------- | ----------- | ------------- |
 | `connect` | Client → Server | Connection established |
 | `disconnect` | Client → Server | Connection closed |
 | `devices_update` | Server → Client | Real-time device updates |
@@ -164,7 +181,9 @@ npm start
 ## Configuration
 
 ### Docker Network Mode
+
 The application uses `network_mode: host` to access the host's network interfaces. This is required for:
+
 - ARP table access
 - Network interface scanning
 - WiFi detection
@@ -172,12 +191,15 @@ The application uses `network_mode: host` to access the host's network interface
 ### Security Considerations
 
 ⚠️ **Local Access Only**
+
 - By default, the backend binds to `0.0.0.0` for Docker compatibility
 - In production, restrict to `127.0.0.1` or use authentication
 - Never expose to the internet without proper security
 
 ### Elevated Privileges
+
 Some features require elevated privileges:
+
 - Packet capture (future feature)
 - WiFi scanning (on some systems)
 - Raw socket access
@@ -187,21 +209,25 @@ The Docker container has `NET_ADMIN` and `NET_RAW` capabilities for these operat
 ## Troubleshooting
 
 ### WiFi Scanning Not Working
+
 - On Linux: Install `network-manager` (`sudo apt-get install network-manager`)
 - On Windows: Ensure WiFi adapter is enabled
 - May require elevated privileges on some systems
 
 ### No Devices Detected
+
 - Check if ARP table is populated: `arp -a` (Windows) or `arp -n` (Linux)
 - Ensure Docker container has host network access
 - Verify firewall isn't blocking ICMP (ping)
 
 ### WebSocket Connection Failed
+
 - Check if backend is running on port 5000
 - Verify CORS settings in backend
 - Check browser console for errors
 
 ### Docker Issues
+
 - If network scanning doesn't work, verify `network_mode: host`
 - On Windows/Mac: Docker Desktop may have limitations with host networking
 - Try running backend directly on host system
@@ -209,6 +235,7 @@ The Docker container has `NET_ADMIN` and `NET_RAW` capabilities for these operat
 ## Future Enhancements
 
 Planned features for future releases:
+
 - [ ] Network topology visualization (graph view)
 - [ ] Port scanning functionality
 - [ ] Packet capture and analysis
@@ -224,9 +251,11 @@ Planned features for future releases:
 ## Development Notes
 
 ### Background Scanning
+
 The backend runs a background thread that scans the network every 30 seconds and updates connected clients via WebSocket.
 
 ### Database Schema
+
 ```sql
 devices (
     id INTEGER PRIMARY KEY,
@@ -247,6 +276,7 @@ network_scans (
 ```
 
 ### Platform Support
+
 - ✅ Linux (full support)
 - ⚠️ Windows (limited WiFi scanning)
 - ⚠️ macOS (limited WiFi scanning)
@@ -256,6 +286,7 @@ network_scans (
 This is an MVP (Minimum Viable Product). Contributions are welcome!
 
 Areas for improvement:
+
 - Cross-platform compatibility
 - More robust error handling
 - Additional network diagnostic tools
@@ -269,6 +300,7 @@ MIT License - feel free to use and modify as needed.
 ## Acknowledgments
 
 Built with:
+
 - Flask & Flask-SocketIO
 - React & Tailwind CSS
 - Lucide React Icons

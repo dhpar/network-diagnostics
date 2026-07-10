@@ -19,9 +19,8 @@ export const Device: FunctionComponent<IDeviceProps> = ({
             <h3 className="text-lg font-semibold">{label}</h3>
         </div>
         <p className="text-2xl font-mono text-blue-300">
-            {isLoading? 'Loading...' : value}
+            { isLoading? 'Loading...' : value }
         </p>
     </>;
 };
 
-// export default Device;

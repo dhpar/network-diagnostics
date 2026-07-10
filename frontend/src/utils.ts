@@ -1,3 +1,4 @@
+import ROUTES from './routes';
 
 export async function fetchResource<T>(request:Request, requestInit?: RequestInit | undefined): Promise<T> {
   try {
@@ -14,4 +15,14 @@ export async function fetchResource<T>(request:Request, requestInit?: RequestIni
     console.error("Error:", error);
     throw error;
   }
-}
+};
+export const headers = new Headers({
+  'Access-Control-Allow-Origin': ROUTES.ORIGIN,
+  'Access-Control-Allow-Method': '*',
+  'Access-Control-Allow-Headers': 'Access-Control-Allow-Origin, Access-Control-Allow-Credentials, access-control-allow-method'
+});
+
+export const getResource = (route:string) => new Request(route, {
+  method: 'get',
+  headers
+});

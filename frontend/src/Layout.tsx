@@ -1,19 +1,12 @@
 import { Network, Clock } from "lucide-react"
-import { useEffect, useState, type Dispatch, type ReactNode } from "react";
-import type { TabType } from "./App.types";
+import { useEffect, useState, type ReactNode } from "react";
 
 export default function Layout({
-  activeTab,
-  setActiveTab,
   children,
-}: {
-  activeTab:TabType
-  setActiveTab: Dispatch<TabType>
-  children: ReactNode
-}) {
+}: { children: ReactNode }) {
   const [connected, setConnected] = useState<boolean>(false);
   const [lastUpdate, setLastUpdate] = useState<Date>();
-  const tabNames = ['dashboard', 'devices', 'wifi', 'DNS'] as TabType[];
+
   useEffect(() => {
         setConnected(navigator.onLine);
         setLastUpdate(new Date());
@@ -43,27 +36,6 @@ export default function Layout({
           </div>
         </div>
       </header>
-      <nav className="bg-gray-800 border-b border-gray-700">
-        <div className="container mx-auto px-4">
-          <div className="flex space-x-1">
-            {tabNames.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => {
-                  setActiveTab(tab)
-                }}
-                className={`px-6 py-3 font-medium capitalize transition-colors ${
-                  activeTab === tab
-                    ? 'bg-gray-900 text-blue-400 border-b-2 border-blue-400'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
       <main>{children}</main>
     </div>
   )

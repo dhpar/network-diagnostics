@@ -1,16 +1,15 @@
 import { Activity, Globe, Waypoints, RefreshCw, Wifi, Network } from "lucide-react";
 import { type FunctionComponent } from "react";
-import Card from "../Card/Card";
+import Card from "../Layout/Card/Card";
 import { Device } from "../Device/Device";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { INetworkInfo } from "../../hooks/useNetworkInfo";
-import type { TDevices, TWifiNetworks } from "../../App.types";
+import type { TDevices } from "../../App.types";
 import { ErrorBoundary } from "react-error-boundary";
 
 interface IDashboard {
     network: UseQueryResult<INetworkInfo, Error>;
     devices: UseQueryResult<TDevices, Error>;
-    scanWifi: UseQueryResult<TWifiNetworks, Error>;
 }    
 
 export const Dashboard: FunctionComponent<IDashboard> = ({
@@ -26,15 +25,10 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
         isError: isDevicesError,
         error: deviceskError,
         refetch: refetchDevices
-    }, 
-    scanWifi: {
-      isPending: isScanWifiLoading, 
-      refetch: refetchScanWifi
     }
 }) => {
     const getStatusColor = (status: string) => 
         status === 'online' ? 'text-green-500' : 'text-red-500';
-    const handleScanWifi = () => refetchScanWifi();
     const devicesValue = devicesData && !isDevicesError? devicesData.devices.filter(d => d.status === 'online').length.toString() : deviceskError?.message || 'Error!';
     return ( 
         <div className="space-y-6">
@@ -99,14 +93,7 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
                         <RefreshCw className={`w-5 h-5 ${isDevicesLoading ? 'animate-spin' : ''}`} />
                         <span>Scan Network</span>
                     </button>
-                    <button
-                        onClick={handleScanWifi}
-                        disabled={isScanWifiLoading}
-                        className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
-                    >
-                        <Wifi className="w-5 h-5" />
-                        <span>Scan WiFi</span>
-                    </button>
+                    
                 </div>
             </Card>
 
@@ -116,14 +103,14 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
                 <div className="space-y-2">
                 {devicesData?.devices.slice(0, 5).map((device, idx) => (
                     <div key={idx} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                        <span className="font-mono">{device.ip}</span>
-                        <span className="text-gray-400 text-sm">{device.mac || 'Unknown'}</span>
-                    </div>
-                    <span className={`text-sm ${getStatusColor(device.status)}`}>
-                        {device.status}
-                    </span>
+                        <div className="flex items-center space-x-3">
+                            <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                            <span className="font-mono">{device.ip}</span>
+                            <span className="text-gray-400 text-sm">{device.mac || 'Unknown'}</span>
+                        </div>
+                        <span className={`text-sm ${getStatusColor(device.status)}`}>
+                            {device.status}
+                        </span>
                     </div>
                 ))}
                 {devicesData?.count === 0 && (

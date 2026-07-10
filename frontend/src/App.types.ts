@@ -37,4 +37,4 @@ export type TWifiNetworks = IWifiNetwork[];
 export type TDNSResults = IDNSResult[];
 
 
-export type TabType = 'dashboard' | 'devices' | 'wifi' | 'DNS';
+export type TabType = 'dashboard' | 'devices' | 'wifi' | 'DNS' | 'traceroute';

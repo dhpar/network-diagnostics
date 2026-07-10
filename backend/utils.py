@@ -1,4 +1,5 @@
 import scapy.all as scapy
+from scapy.layers.inet import ICMP, IP
 from scapy.layers.l2 import ARP, Ether
 from platform import system
 from subprocess import run
@@ -168,3 +169,95 @@ def background_scan():
         except Exception as e:
             print(f"Background scan error: {e}")
         time.sleep(30)  # Scan every 30 seconds
+
+def traceroute_host(target, max_hops=30, timeout=2):
+    """
+    Traces the route to a host using the system `traceroute` command (UDP
+    probes), then parses its output into structured JSON.
+
+    We shell out to the real `traceroute` binary rather than reimplementing
+    it with scapy, since scapy's raw packet capture is unreliable under
+    WSL2's mirrored networking (confirmed: ICMP probes sent and received,
+    but scapy can't correlate replies to probes). UDP-mode traceroute uses
+    a normal socket + IP_RECVERR trick under the hood, so it doesn't need
+    raw sockets or elevated privileges either, unlike `traceroute -I`.
+
+    `target` can be a bare hostname/IP, or a full URL (http(s)://host/path),
+    the scheme and path are stripped automatically.
+    """
+    import re
+    import socket
+    import subprocess
+    from urllib.parse import urlparse
+
+    parsed = urlparse(target if "://" in target else f"//{target}")
+    hostname = parsed.hostname or target
+
+    try:
+        target_ip = socket.gethostbyname(hostname)
+    except socket.gaierror as e:
+        raise ValueError(f"Could not resolve host '{hostname}': {e}")
+
+    try:
+        proc = subprocess.run(
+            ["traceroute", "-n", "-w", str(timeout), "-m", str(max_hops), hostname],
+            capture_output=True, text=True,
+            timeout=(max_hops * timeout) + 10  # safety margin over traceroute's own internal timeouts
+        )
+    except FileNotFoundError:
+        raise RuntimeError("The 'traceroute' command isn't installed. Install it with: sudo apt install traceroute")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Traceroute took too long and was killed before finishing")
+
+    if proc.returncode != 0 and not proc.stdout:
+        raise RuntimeError(f"Traceroute failed: {proc.stderr.strip()}")
+
+    hop_line_re = re.compile(r'^\s*(\d+)\s+(.*)$')
+    ip_re = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+    ms_re = re.compile(r'([\d.]+)\s*ms')
+
+    hops = []
+    for line in proc.stdout.strip().splitlines():
+        match = hop_line_re.match(line)
+        if not match:
+            continue  # skips the "traceroute to X, N hops max..." header line
+
+        hop_num = int(match.group(1))
+        rest = match.group(2)
+
+        ips = ip_re.findall(rest)
+        rtts = [float(x) for x in ms_re.findall(rest)]
+
+        if not ips and '*' in rest:
+            hops.append({
+                "hop": hop_num,
+                "ip": None,
+                "rtt_ms": None,
+                "status": "timeout"
+            })
+            continue
+
+        hop_ip = ips[0] if ips else None
+        avg_rtt = round(sum(rtts) / len(rtts), 1) if rtts else None
+        status = "reached" if hop_ip == target_ip else "ok"
+
+        hops.append({
+            "hop": hop_num,
+            "ip": hop_ip,
+            "rtt_ms": avg_rtt,
+            "status": status
+        })
+
+    reached = bool(hops) and hops[-1]["status"] == "reached"
+    timed_out_hops = [h["hop"] for h in hops if h["status"] == "timeout"]
+
+    return {
+        "target": hostname,
+        "target_ip": target_ip,
+        "reached": reached,
+        "total_hops": len(hops),
+        "has_failures": len(timed_out_hops) > 0,
+        "failed_at_hops": timed_out_hops,
+        "hops": hops
+    }
+    
