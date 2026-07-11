@@ -1,3 +1,4 @@
+from http.client import HTTPException
 import time
 from flask import jsonify, Blueprint
 from dotenv import load_dotenv
@@ -5,7 +6,7 @@ from datetime import datetime
 from utils import get_local_ip, get_net_mask, get_gateway, ping_host, scan_network, traceroute_host
 import re
 from wifi import get_wifi_scan_from_windows
-from flask import request, jsonify
+from flask import request, jsonify, abort
 
 load_dotenv()
 
@@ -90,8 +91,6 @@ def wifi_scan():
         print(f"WiFi scan error: {e}")
         return jsonify({'error': 'WiFi scanning requires a native Windows Python with pywifi installed'}), 500
 
-
-
 @routes.route('/api/traceroute')
 def traceroute():
     """Traceroute to a given host/URL, reporting where the path fails, if anywhere"""
@@ -106,11 +105,8 @@ def traceroute():
         result = traceroute_host(target, max_hops=max_hops, timeout=timeout)
         return jsonify(result)
     except ValueError as e:
-        return jsonify({
-            'error': str(e)
-        }), 400
+        abort(400, description=str(e))
     except Exception as e:
         print(f"Traceroute error: {e}")
-        return jsonify({
-            'error': 'Traceroute failed'
-        }), 500
+        abort(500, description='Traceroute failed')
+        

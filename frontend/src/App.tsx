@@ -59,7 +59,7 @@ const App: FunctionComponent = () => {
         {/* Footer */}
         <footer className="bg-gray-800 border-t border-gray-700 mt-12">
           <div className="container mx-auto px-4 py-4 text-center text-gray-400 text-sm">
-            Network Diagnostics MVP • Local Access Only
+            Network Diagnostics • Local Access Only
           </div>
         </footer>
       </div>

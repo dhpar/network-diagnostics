@@ -10,4 +10,5 @@ export default {
     DEVICES: `${API_URL}/api/devices`,
     SCAN_WIFI: `${API_URL}/api/wifi/scan`,
     DNS_TEST: `${API_URL}/api/dns/test`,
+    TRACEROUTE: `${API_URL}/api/traceroute?target=google.com`,
 }

@@ -35,6 +35,27 @@ export type TDevices = {
 }
 export type TWifiNetworks = IWifiNetwork[];
 export type TDNSResults = IDNSResult[];
+export type TTracerouteHop = {
+  "failed_at_hops": Array<number>,
+  "has_failures": Boolean,
+  "hops": Array<{
+      "hop": number,
+      "hostname": string,
+      "ip": string,
+      "rtt_ms": number,
+      "status": "ok" | string;
+  }>,
+  "reached": Boolean,
+  "target": string,
+  "target_ip": string,
+  "timing": {
+    "traceroute_ms": number,
+    "dns_lookup_ms": number,
+    "total_ms": number
+  },
+  "total_hops": number
+}
 
+export type TTracerouteResults = TTracerouteHop[];
 
 export type TabType = 'dashboard' | 'devices' | 'wifi' | 'DNS' | 'traceroute';
