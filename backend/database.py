@@ -1,8 +1,11 @@
 # Database initialization
 import sqlite3
+import os
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'network_diagnostics.db')
 
 def init_db():
-    conn = sqlite3.connect('network_diagnostics.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
     c.execute('''CREATE TABLE IF NOT EXISTS devices
@@ -24,6 +27,6 @@ def init_db():
     conn.close()
 
 def get_db():
-    conn = sqlite3.connect('network_diagnostics.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn

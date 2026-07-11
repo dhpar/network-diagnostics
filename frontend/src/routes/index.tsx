@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Activity, Globe, Waypoints, RefreshCw, Network } from "lucide-react";
+import { Activity, Globe, Waypoints, RefreshCw, Network, Circle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { INetworkInfo } from "../hooks/useNetworkInfo";
 import type { TDevices } from "../App.types";
@@ -63,7 +63,7 @@ function Index() {
                 </Card>
                 <Card>
                     <ErrorBoundary
-                    fallbackRender={({ error }) => (
+                        fallbackRender={({ error }) => (
                         <div className="p-4 bg-red-900/20 border border-red-900 rounded-lg">
                         <p className="text-red-500">Something went wrong: {error.message}</p>
                         </div>
@@ -103,8 +103,8 @@ function Index() {
                 {devices.data?.devices.slice(0, 5).map((device, idx) => (
                     <div key={idx} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
                         <div className="flex items-center space-x-3">
-                            <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span className="font-mono">{device.ip}</span>
+                            <Circle className={`w-5 h-5 ${device.status === 'online'? 'text-green-500': 'text-red-500'}`} />
+                            <span className="font-mono">{device.hostname}</span>
                             <span className="text-gray-400 text-sm">{device.mac || 'Unknown'}</span>
                         </div>
                         <span className={`text-sm ${getStatusColor(device.status)}`}>

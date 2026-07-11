@@ -1,4 +1,4 @@
-import { RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Circle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import Layout from '../Layout';
@@ -43,23 +43,19 @@ function Devices () {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
-                    {data?.devices?.map((device, idx) => (
-                        <tr key={idx} className="hover:bg-gray-700 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                {device.status === 'online' ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                                ) : (
-                                <XCircle className="w-5 h-5 text-red-500" />
-                                )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap font-mono text-blue-300">{device.ip}</td>
-                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-400">{device.mac || 'Unknown'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-gray-300">{device.hostname || 'Unknown'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'N/A'}
-                            </td>
-                        </tr>
-                    ))}
+                        {data?.devices?.map((device, idx) => (
+                            <tr key={idx} className="hover:bg-gray-700 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <Circle className={`w-5 h-5 ${device.status === 'online'? 'text-green-500': 'text-red-500'}`} />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap font-mono text-blue-300">{device.ip}</td>
+                                <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-400">{device.mac || 'Unknown'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-gray-300">{device.hostname || 'Unknown'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                                    {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'N/A'}
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             {data?.count === 0 && (

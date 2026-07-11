@@ -13,54 +13,58 @@ export const Route = createFileRoute('/Traceroute')({
 function Traceroute() {
     const tracerouteRequest = getResource(ROUTES.TRACEROUTE);
     const {data, isError, error, isPending, refetch, isLoading} = useQuery({ 
-        queryKey: ['scan DNS'], 
+        queryKey: ['Traceroute'], 
         queryFn: () => {
             const res = fetchResource<TTracerouteHop>(tracerouteRequest);
             return res;
         },
     });
-    if (isPending) 
+
+    if (isPending || isLoading) {
         return <Layout>
             <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Traceroute</h2>
-                <button
-                    onClick={() =>{ 
-                        refetch();
-                    }}
-                    disabled={isLoading}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-                >
-                    <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
-                    <span>Refresh</span>
-                </button>
-            </div>
-            <div className="space-y-6">
-                <div className="text-sm">Loading...</div>
-            </div>
-        </div>
-    </Layout>;
-    if (isError) {
-        return <Layout><div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Traceroute</h2>
-                <button
-                    onClick={() => refetch()}
-                    disabled={isLoading}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-                >
-                    <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
-                    <span>Refresh</span>
-                </button>
-            </div>
-            <div className="space-y-6">
-                <div className="text-red-400 text-sm">
-                    {`Error retrieving traceroute: ${error}`}
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">Traceroute</h2>
+                    <button
+                        onClick={() => refetch()}
+                        disabled={isLoading}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                    </button>
+                </div>
+                <div className="space-y-6">
+                    <div className="text-sm">Loading...</div>
                 </div>
             </div>
-        </div>
-    </Layout>
+        </Layout>;
     }
+
+    if (isError) {
+        return (
+        <Layout>
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">Traceroute</h2>
+                    <button
+                        onClick={() => refetch()}
+                        disabled={isLoading}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                    </button>
+                </div>
+                <div className="space-y-6">
+                    <div className="text-red-400 text-sm">
+                        {`Error retrieving traceroute: ${error}`}
+                    </div>
+                </div>
+            </div>
+        </Layout>
+    )}
+
     const Status = ({hopStatus}: {hopStatus:string}) => {
         switch(hopStatus){
             case 'ok':
