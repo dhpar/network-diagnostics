@@ -51,7 +51,9 @@ export type TTracerouteHop = {
   "timing": {
     "traceroute_ms": number,
     "dns_lookup_ms": number,
-    "total_ms": number
+    "total_ms": number,
+    "destination_rtt_ms": number,
+    "estimated_one_way_ms": number
   },
   "total_hops": number
 }
