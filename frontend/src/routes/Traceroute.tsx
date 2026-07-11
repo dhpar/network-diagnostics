@@ -1,22 +1,16 @@
-import { type FunctionComponent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { TTracerouteHop } from "../../App.types";
-import { fetchResource } from "../../utils";
-import ROUTES from '../../routes';
+import type { TTracerouteHop } from "../App.types";
+import { fetchResource, getResource } from "../utils";
 import { Globe, RefreshCw, Circle } from "lucide-react";
+import ROUTES from '../routes';
+import Layout from '../Layout';
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Traceroute:FunctionComponent<{}> = () => {
-    const getResource = (route:string) => new Request(
-        route, 
-        {
-            method: 'get',
-            headers: {
-                'Access-Control-Allow-Origin': ROUTES.ORIGIN,
-                'Access-Control-Allow-Method': '*',
-                'Access-Control-Allow-Headers': 'Access-Control-Allow-Origin, Access-Control-Allow-Credentials, access-control-allow-method',
-            }
-        }
-    );
+export const Route = createFileRoute('/Traceroute')({
+  component: Traceroute
+});
+
+function Traceroute() {
     const tracerouteRequest = getResource(ROUTES.TRACEROUTE);
     const {data, isError, error, isPending, refetch, isLoading} = useQuery({ 
         queryKey: ['scan DNS'], 
@@ -24,11 +18,30 @@ export const Traceroute:FunctionComponent<{}> = () => {
             const res = fetchResource<TTracerouteHop>(tracerouteRequest);
             return res;
         },
-        // enabled: false
     });
-    if (isPending) return <div>Loading...</div>;
+    if (isPending) 
+        return <Layout>
+            <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Traceroute</h2>
+                <button
+                    onClick={() =>{ 
+                        refetch();
+                    }}
+                    disabled={isLoading}
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+                >
+                    <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                </button>
+            </div>
+            <div className="space-y-6">
+                <div className="text-sm">Loading...</div>
+            </div>
+        </div>
+    </Layout>;
     if (isError) {
-        return <div className="space-y-6">
+        return <Layout><div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Traceroute</h2>
                 <button
@@ -46,6 +59,7 @@ export const Traceroute:FunctionComponent<{}> = () => {
                 </div>
             </div>
         </div>
+    </Layout>
     }
     const Status = ({hopStatus}: {hopStatus:string}) => {
         switch(hopStatus){
@@ -59,11 +73,13 @@ export const Traceroute:FunctionComponent<{}> = () => {
     }
 
     return (
-        <>
+        <Layout>
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Traceroute</h2>
                 <button
-                    onClick={() => refetch()}
+                    onClick={() =>{ 
+                        refetch();
+                    }}
                     disabled={isLoading}
                     className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
                 >
@@ -71,8 +87,10 @@ export const Traceroute:FunctionComponent<{}> = () => {
                     <span>Refresh</span>
                 </button>
             </div>
+            <h3 className="text-xl">Traceroute state: {data.reached? <span className="text-blue-500">Has reached the destination</span> :<span className="text-red-500">Hasn't reached the destination</span>}</h3>
+            
             <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <table className="w-full">
+                <table className="w-full divide-y divide-gray-700">
                     <thead className="bg-gray-700">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
@@ -113,8 +131,21 @@ export const Traceroute:FunctionComponent<{}> = () => {
                     ))}
                     </tbody>
                     <tfoot>
-                        <tr >
-                            <td className="flex flex-1 px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-400 text-right">{data.timing.traceroute_ms}ms</td>
+                        <tr>
+                            <td colSpan={5} className="px-6 py-2 whitespace-nowrap font-mono text-gray-400 text-right text-sm">
+                            Command time: <span className="text-lg text-blue-500">{data.timing.traceroute_ms}ms</span></td>
+                        </tr>
+                        {data.timing.estimated_one_way_ms && <tr>
+                            <td colSpan={5} className="px-6 py-2 whitespace-nowrap font-mono text-gray-400 text-right text-sm">Estimated one way time: <span className="text-lg text-blue-500">{data.timing.estimated_one_way_ms}ms</span></td>
+                        </tr>}
+                        {data.timing.destination_rtt_ms && <tr>
+                            <td colSpan={5} className="px-6 py-2 whitespace-nowrap font-mono text-gray-400 text-right text-sm">Round trip time to destination: <span className="text-lg text-blue-500">{data.timing.destination_rtt_ms}ms</span></td>
+                        </tr>}
+                        <tr>
+                            <td colSpan={5} className="px-6 py-2 whitespace-nowrap font-mono text-gray-400 text-right text-sm">DNS lookup time: <span className="text-lg text-blue-500">{data.timing.dns_lookup_ms}ms</span></td>
+                        </tr>
+                            <tr>
+                            <td colSpan={5} className="px-6 py-2 whitespace-nowrap font-mono text-gray-400 text-right text-sm">Total time: <span className="text-lg text-blue-500">{data.timing.total_ms}ms</span></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -125,6 +156,6 @@ export const Traceroute:FunctionComponent<{}> = () => {
                     </div>
                 )}
             </div>
-    </>
+    </Layout>
     )
 }

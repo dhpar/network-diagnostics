@@ -3,7 +3,9 @@ import time
 from flask import jsonify, Blueprint
 from dotenv import load_dotenv
 from datetime import datetime
-from utils import get_local_ip, get_net_mask, get_gateway, ping_host, scan_network, traceroute_host
+from backend.traceroute import traceroute_host
+from utils import get_local_ip, get_net_mask, get_gateway, ping_host, scan_network
+from database import get_db
 import re
 from wifi import get_wifi_scan_from_windows
 from flask import request, jsonify, abort
@@ -32,10 +34,13 @@ def network_info():
 
 @routes.route('/api/devices')
 def get_devices():
-    devices = scan_network()
-    if not devices:
-        return jsonify({'error': 'No devices found'})
-    return jsonify({'devices': devices, 'count': len(devices)})
+    conn = get_db()
+    c = conn.cursor()
+    rows = c.execute('SELECT ip, mac, hostname, last_seen, status FROM devices ORDER BY last_seen DESC').fetchall()
+    conn.close()
+
+    devices = [dict(row) for row in rows]
+    return jsonify({'devices': devices})
 
 
 @routes.route('/api/ping/<ip>')

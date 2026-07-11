@@ -1,36 +1,35 @@
-import { Activity, Globe, Waypoints, RefreshCw, Wifi, Network } from "lucide-react";
-import { type FunctionComponent } from "react";
-import Card from "../Layout/Card/Card";
-import { Device } from "../Device/Device";
-import type { UseQueryResult } from "@tanstack/react-query";
-import type { INetworkInfo } from "../../hooks/useNetworkInfo";
-import type { TDevices } from "../../App.types";
+import { createFileRoute } from '@tanstack/react-router'
+import { Activity, Globe, Waypoints, RefreshCw, Network } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { INetworkInfo } from "../hooks/useNetworkInfo";
+import type { TDevices } from "../App.types";
 import { ErrorBoundary } from "react-error-boundary";
+import { getResource, fetchResource } from '../utils';
+import { Device } from '../components/Device/Device';
+import Card from '../components/Layout/Card/Card';
+import ROUTES from '../routes';
+import Layout from '../Layout';
 
-interface IDashboard {
-    network: UseQueryResult<INetworkInfo, Error>;
-    devices: UseQueryResult<TDevices, Error>;
-}    
+export const Route = createFileRoute('/')({
+  component: Index,
+})
 
-export const Dashboard: FunctionComponent<IDashboard> = ({
-    network: {
-        data: networkData, 
-        isPending: isNetworkLoading, 
-        isError: isNetworkError,
-        error: networkError
-    }, 
-    devices: {
-        data: devicesData, 
-        isPending: isDevicesLoading, 
-        isError: isDevicesError,
-        error: deviceskError,
-        refetch: refetchDevices
-    }
-}) => {
+function Index() {
+  const devicesRequest = getResource(ROUTES.DEVICES);
+  const devices = useQuery({ 
+    queryKey: ['devices'], 
+    queryFn: () => fetchResource<TDevices>(devicesRequest)
+  });
+  const networkInfoRequest = getResource(ROUTES.NETWORK_INFO);  
+  const networkInfo = useQuery({ 
+    queryKey: ['Net Info'], 
+    queryFn: () => fetchResource<INetworkInfo>(networkInfoRequest)
+  });
     const getStatusColor = (status: string) => 
         status === 'online' ? 'text-green-500' : 'text-red-500';
-    const devicesValue = devicesData && !isDevicesError? devicesData.devices.filter(d => d.status === 'online').length.toString() : deviceskError?.message || 'Error!';
-    return ( 
+    const devicesValue = devices.data && !devices.isError? devices.data.devices.filter(d => d.status === 'online').length.toString() : devices.error?.message || 'Error!';
+    return (
+      <Layout>
         <div className="space-y-6">
             {/* Network Info Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -42,24 +41,24 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
                                 stroke='var(--color-blue-400)' 
                                 className="w-6 h-6 text-transparent" /> 
                         } 
-                        value={ !isNetworkError && networkData?.local_ip? networkData.local_ip : networkError?.message || 'Error!'}
-                        isLoading={isNetworkLoading}
+                        value={ !networkInfo.isError && networkInfo.data?.local_ip? networkInfo.data.local_ip : networkInfo.error?.message || 'Error!'}
+                        isLoading={networkInfo.isLoading}
                     />
                 </Card>
                 <Card>
                     <Device 
                         label={'Gateway'} 
                         icon={ <Network stroke={`var(--color-green-400)`} className="w-6 h-6 text-transparent" /> } 
-                        value={!isNetworkError && networkData?.gateway? networkData.gateway : networkError?.message || 'Error!'}
-                        isLoading={isNetworkLoading}
+                        value={!networkInfo.isError && networkInfo.data?.gateway? networkInfo.data.gateway : networkInfo.error?.message || 'Error!'}
+                        isLoading={networkInfo.isLoading}
                     />
                 </Card>
                 <Card>
                     <Device 
                         label={'Subnet'} 
                         icon={ <Waypoints stroke={`var(--color-purple-400)`} className="w-6 h-6 text-transparent" /> } 
-                        value={!isNetworkError && networkData?.subnet? networkData?.subnet : networkError?.message || 'Error!'}
-                        isLoading={isNetworkLoading}
+                        value={!networkInfo.isError && networkInfo.data?.subnet? networkInfo.data?.subnet : networkInfo.error?.message || 'Error!'}
+                        isLoading={networkInfo.isLoading}
                     />
                 </Card>
                 <Card>
@@ -74,7 +73,7 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
                             label={'Devices'} 
                             icon={ <Activity stroke={`var(--color-amber-400)`} className="w-6 h-6 text-transparent" />} 
                             value={devicesValue}
-                            isLoading={isDevicesLoading}
+                            isLoading={devices.isLoading}
                         />
                     </ErrorBoundary>
                 </Card>
@@ -86,11 +85,11 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
                 <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
                 <div className="flex flex-wrap gap-4">
                     <button
-                        onChange={() => refetchDevices()}
-                        disabled={isDevicesLoading}
+                        onChange={() => devices.refetch()}
+                        disabled={devices.isLoading}
                         className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg transition-colors"
                     >
-                        <RefreshCw className={`w-5 h-5 ${isDevicesLoading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-5 h-5 ${devices.isLoading ? 'animate-spin' : ''}`} />
                         <span>Scan Network</span>
                     </button>
                     
@@ -101,7 +100,7 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
             <Card>
                 <h3 className="text-xl font-semibold mb-4">Recent Devices</h3>
                 <div className="space-y-2">
-                {devicesData?.devices.slice(0, 5).map((device, idx) => (
+                {devices.data?.devices.slice(0, 5).map((device, idx) => (
                     <div key={idx} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
                         <div className="flex items-center space-x-3">
                             <div className={`w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -113,12 +112,13 @@ export const Dashboard: FunctionComponent<IDashboard> = ({
                         </span>
                     </div>
                 ))}
-                {devicesData?.count === 0 && (
+                {devices.data?.count === 0 && (
                     <p className="text-center text-gray-400 py-4">No devices detected yet</p>
                 )}
                 </div>
             </Card>
         </div>
+      </Layout>
     )
 }
 

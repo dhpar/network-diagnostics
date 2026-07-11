@@ -13,6 +13,7 @@ This is a general task section.
 - [ ] Connected Icon is inconsistent, find a way to make it more relevant, maybe using the `/api/ping/<ip>` endpoint?
   - ~~Should make all the other queries dependants on this one? ie: If this query fails do not run all the others?~~ Doesn't make sense, since is that is the main goal of this app, to run the other queries and figure out where the network issue is.
 - [ ] Implement direct communication with router.
+- [ ] Implement Tanstack router.
 - [ ] Implement database storage in backend, in order to show historical data, assign names to IPs (ie: 192.168.0.23 is a smart outlet).
 - [ ] Implement fake DHCP detection via Scapy.
 - [ ] Move to a totally dockerized execution native on windows. This should allow direct accesss to wifi phisical layer, AKA: signal strengh, Signal-Noise Ratio, chanels, wifi name...
