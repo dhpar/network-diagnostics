@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Activity, Globe, Waypoints, RefreshCw, Network, Circle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { INetworkInfo } from "../hooks/useNetworkInfo";
-import type { TDevices } from "../App.types";
+import type { IscanInfo, TDevices } from "../App.types";
 import { ErrorBoundary } from "react-error-boundary";
 import { getResource, fetchResource } from '../utils';
 import { Device } from '../components/Device/Device';
@@ -23,11 +23,14 @@ function Index() {
   const networkInfoRequest = getResource(ROUTES.NETWORK_INFO);  
   const networkInfo = useQuery({ 
     queryKey: ['Net Info'], 
-    queryFn: () => fetchResource<INetworkInfo>(networkInfoRequest)
+    queryFn: () => fetchResource<IscanInfo>(networkInfoRequest)
   });
     const getStatusColor = (status: string) => 
         status === 'online' ? 'text-green-500' : 'text-red-500';
     const devicesValue = devices.data && !devices.isError? devices.data.devices.filter(d => d.status === 'online').length.toString() : devices.error?.message || 'Error!';
+    const ipValue = !networkInfo.isError && networkInfo.data?.local_ip? 
+        networkInfo.data.local_ip : 
+        networkInfo.error?.message || 'Error!'
     return (
       <Layout>
         <div className="space-y-6">
@@ -41,7 +44,7 @@ function Index() {
                                 stroke='var(--color-blue-400)' 
                                 className="w-6 h-6 text-transparent" /> 
                         } 
-                        value={ !networkInfo.isError && networkInfo.data?.local_ip? networkInfo.data.local_ip : networkInfo.error?.message || 'Error!'}
+                        value={ipValue}
                         isLoading={networkInfo.isLoading}
                     />
                 </Card>

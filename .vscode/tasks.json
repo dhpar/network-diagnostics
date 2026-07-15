@@ -1,0 +1,62 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "typescript",
+			"tsconfig": "frontend/tsconfig.app.json",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"label": "tsc: build"
+		},
+		{
+			"type": "npm",
+			"script": "dev",
+			"path": "/frontend",
+			"problemMatcher": [
+				"$vite-esbuild"
+			],
+			"label": "npm: dev - frontend",
+			"detail": "vite",
+			"isBackground": true
+		},
+		{
+			"type": "npm",
+			"script": "build",
+			"path": "frontend",
+			"group": "build",
+			"problemMatcher": [
+				"$vite-eslint-visualstudio"
+			],
+			"label": "npm: build - frontend",
+			"detail": "tsc -b && vite build"
+		},
+        {
+            "label": "ensure-venv",
+            "type": "shell",
+            "command": "bash",
+            "args": ["${workspaceFolder}/backend/ensure_venv.sh"],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+				"clear": true   
+            },
+            "problemMatcher": []
+        },
+		{
+            "label": "Install Dependencies",
+            "type": "shell",
+            "command": "pip",
+            "args": [
+                "install",
+                "-r",
+                "${workspaceFolder}/requirements.txt"
+            ],
+            "problemMatcher": []
+        }
+	]
+}

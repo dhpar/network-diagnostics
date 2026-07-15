@@ -5,6 +5,7 @@ export interface IDevice {
   hostname?: string;
   vendor?: string;
   last_seen?: string;
+  label?: string;
   status: string;
 }
 
@@ -25,7 +26,7 @@ export interface IDNSResult {
   domain: string;
   ip?: string;
   time_ms?: number;
-  status: 'success' | 'failed';
+  status: 'success' | 'failed' | 'Unknown';
   error?: string;
 }
 

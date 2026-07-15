@@ -1,14 +1,27 @@
-import { RefreshCw, CheckCircle, XCircle, Circle } from 'lucide-react';
+import { RefreshCw, Circle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import Layout from '../Layout';
 import { getResource, fetchResource } from '../utils';
 import type { TDevices } from '../App.types';
 import ROUTES from '../routes';
+import EditDevice from '../components/Device/EditDevice';
 
 export const Route = createFileRoute('/Devices')({
   component: Devices,
 })
+
+const ConnectionIcon = ({status}) => {
+    switch(status){
+        case 'online':
+            return <Circle className='w-5 h-5 text-green-500' />
+        case 'offline':
+            return <Circle className='w-5 h-5 text-red-500' />
+        case 'Unknown': 
+        default:
+            return <Circle className='w-5 h-5 stroke-gray-700' />
+    }
+}
 
 function Devices () {
     const devicesRequest = getResource(ROUTES.DEVICES);
@@ -38,6 +51,7 @@ function Devices () {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">IP Address</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">MAC Address</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Label</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Hostname</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Last Seen</th>
                         </tr>
@@ -46,10 +60,13 @@ function Devices () {
                         {data?.devices?.map((device, idx) => (
                             <tr key={idx} className="hover:bg-gray-700 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <Circle className={`w-5 h-5 ${device.status === 'online'? 'text-green-500': 'text-red-500'}`} />
+                                    <ConnectionIcon status={device.status}/>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap font-mono text-blue-300">{device.ip}</td>
                                 <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-400">{device.mac || 'Unknown'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-400">
+                                    <EditDevice device={device} />
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-gray-300">{device.hostname || 'Unknown'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                                     {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'N/A'}

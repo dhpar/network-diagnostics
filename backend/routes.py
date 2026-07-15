@@ -1,14 +1,12 @@
-from http.client import HTTPException
+import re
 import time
-from flask import jsonify, Blueprint
 from dotenv import load_dotenv
 from datetime import datetime
 from backend.traceroute import traceroute_host
-from utils import get_local_ip, get_net_mask, get_gateway, ping_host, scan_network
-from database import get_db
-import re
-from wifi import get_wifi_scan_from_windows
-from flask import request, jsonify, abort
+import backend.utils
+from backend.database import get_db
+from backend.wifi import get_wifi_scan_from_windows
+from flask import request, jsonify, abort, Blueprint, request
 
 load_dotenv()
 
@@ -23,20 +21,25 @@ def health():
 
 @routes.route('/api/network/info')
 def network_info():
-    local_ip = get_local_ip()
-    gateway = get_gateway()
-    net_msk = get_net_mask()
+    local_ip = backend.utils.get_local_ip()
+    gateway = backend.utils.get_gateway()
+    net_msk = backend.utils.get_net_mask()
     return jsonify({
         'local_ip': local_ip,
         'gateway': gateway,
-        'subnet': '.'.join(local_ip.split('.')[:-1]) + f'.0/{net_msk}'
+        'subnet': '.'.join(local_ip.split('.')[:-1]) + f'.0/{net_msk}',
     })
 
 @routes.route('/api/devices')
 def get_devices():
     conn = get_db()
     c = conn.cursor()
-    rows = c.execute('SELECT ip, mac, hostname, last_seen, status FROM devices ORDER BY last_seen DESC').fetchall()
+    rows = c.execute('''
+        SELECT d.ip, d.mac, d.hostname, d.last_seen, d.status, l.label
+        FROM devices d
+        LEFT JOIN device_labels l ON UPPER(d.mac) = l.mac
+        ORDER BY d.last_seen DESC
+    ''').fetchall()
     conn.close()
 
     devices = [dict(row) for row in rows]
@@ -49,7 +52,7 @@ def ping(ip):
     if not re.match(r'^[\d.]+$', ip):
         return jsonify({'error': 'Invalid IP address'}), 400
     
-    is_alive = ping_host(ip)
+    is_alive = backend.utils.ping_host(ip)
     return jsonify({
         'ip': ip, 
         'status': 'online' if is_alive else 'offline'
@@ -115,3 +118,44 @@ def traceroute():
         print(f"Traceroute error: {e}")
         abort(500, description='Traceroute failed')
         
+@routes.route('/api/devices/update/<mac>/label', methods=['PUT'])
+def set_device_label(mac):
+    data = request.get_json(silent=True) or {}
+    label = data.get('label', '').strip()
+
+    if not label:
+        return jsonify({'error': 'label is required'}), 400
+
+    normalized_mac = mac.strip().upper()
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''INSERT INTO device_labels (mac, label, updated_at)
+                 VALUES (?, ?, ?)
+                 ON CONFLICT(mac) DO UPDATE SET label=excluded.label, updated_at=excluded.updated_at''',
+              (normalized_mac, label, datetime.now()))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'mac': normalized_mac, 'label': label})
+
+@routes.route('/api/devices/<mac>/label', methods=['DELETE'])
+def delete_device_label(mac):
+    normalized_mac = mac.strip().upper()
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('DELETE FROM device_labels WHERE mac = ?', (normalized_mac,))
+    deleted = c.rowcount > 0
+    conn.commit()
+    conn.close()
+
+    if not deleted:
+        return jsonify({'error': f'No label found for mac {normalized_mac}'}), 404
+
+    return jsonify({'mac': normalized_mac, 'deleted': True})
+
+@routes.route('/api/devices/lease_time')
+def get_lease_time():
+    lease = backend.utils.lease_DHCP_time()
+    return jsonify(lease)

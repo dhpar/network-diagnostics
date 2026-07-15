@@ -16,13 +16,38 @@ export async function fetchResource<T>(request:Request, requestInit?: RequestIni
     throw error;
   }
 };
+
 export const headers = new Headers({
   'Access-Control-Allow-Origin': ROUTES.ORIGIN,
   'Access-Control-Allow-Method': '*',
-  'Access-Control-Allow-Headers': 'Access-Control-Allow-Origin, Access-Control-Allow-Credentials, access-control-allow-method'
+  'Access-Control-Allow-Headers': 'Access-Control-Allow-Origin, Access-Control-Allow-Credentials, access-control-allow-method',
+  'Content-Type': 'application/json'
 });
 
-export const getResource = (route:string) => new Request(route, {
-  method: 'get',
-  headers
-});
+export const getResource = (route:string) => 
+  new Request(route, {
+    method: 'get',
+    headers
+  });
+
+export function postResource<T>(route:string, body: T) {
+  return new Request(
+    route, 
+    {
+      method: 'post',
+      headers,
+      body: JSON.stringify(body)
+    }
+  );
+}
+
+export function putResource<T>(route:string, body: T){
+  return new Request(
+    route, 
+    {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+    }
+  );
+} 

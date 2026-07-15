@@ -1,0 +1,12 @@
+{
+  "debug.javascript.terminalOptions": {
+    "resolveSourceMapLocations": [
+      "${workspaceFolder}/**",
+      "!**/node_modules/**",
+      "**/node_modules/.vite-temp/**"
+    ]
+  },
+  "python.analysis.extraPaths": [
+    "./backend/.venv/lib/python3.12/site-packages"
+  ]
+}

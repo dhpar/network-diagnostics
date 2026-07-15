@@ -1,16 +1,17 @@
 import scapy.all as scapy
-from scapy.layers.inet import ICMP, IP
-from scapy.layers.l2 import ARP, Ether
-from platform import system
-from subprocess import run
 import re
 import time
 import socket
-from database import get_db
+import paramiko
+import os
+from flask.cli import run_command
+from platform import system
+from subprocess import run
 from datetime import datetime
-import netifaces
 from concurrent.futures import ThreadPoolExecutor
-
+from scapy.layers.l2 import ARP, Ether
+from backend.database import get_db
+    
 def get_local_ifaces():
     return scapy.conf.ifaces
 
@@ -32,21 +33,43 @@ def get_gateway():
             return "%i.%i.%i.%i" % (int(hip[6:8], 16), int(hip[4:6], 16), int(hip[2:4], 16), int(hip[0:2], 16))
     except Exception:
         print("Error getting default gateway (get_gateway)")
-
+        
 def get_net_mask():
-    # Get the default interface Scapy is currently using
-    default_iface = scapy.conf.iface 
-    # Fetch all addresses assigned to the default interface
-    addrs = netifaces.ifaddresses(default_iface.name)
-    ipv4_info = addrs.get(netifaces.AF_INET, [])
-    
-    if ipv4_info:
-        netmask = ipv4_info[0].get('netmask')
-        if netmask is not None:
-            prefixed_mask = sum(bin(int(octet)).count('1') for octet in netmask.split('.'))
-            return prefixed_mask
-        else: 
-            return 'the net mask doesn\'t exists'
+    """
+    Returns the CIDR prefix length (e.g. 24) of the local machine's subnet,
+    derived from scapy's routing table.
+
+    Normally excludes /32 (host-specific) and multicast routes when looking
+    for the real LAN subnet. But if NOTHING else qualifies, that itself is a
+    signal we're likely on a VPN's point-to-point tunnel, where /32 is the
+    genuinely correct answer, not a host-route artifact, so we fall back to
+    allowing it in that case.
+    """
+    local_ip = get_local_ip()
+
+    def collect_candidates(allow_host_routes):
+        found = []
+        for net, msk, gw, iface, addr, metric in scapy.conf.route.routes:
+            if addr != local_ip or gw != '0.0.0.0':
+                continue
+            if not allow_host_routes and msk == 0xFFFFFFFF:
+                continue
+            if 0xE0000000 <= net <= 0xEFFFFFFF:  # 224.0.0.0/4 multicast range
+                continue
+            found.append((net, msk))
+        return found
+
+    candidates = collect_candidates(allow_host_routes=False)
+
+    if not candidates:
+        # Nothing but /32 and multicast entries matched, likely a VPN tunnel
+        candidates = collect_candidates(allow_host_routes=True)
+
+    if not candidates:
+        return None
+
+    _, msk = min(candidates, key=lambda pair: bin(pair[1]).count('1'))
+    return bin(msk).count('1')
 
 def ping_host(ip):
     """Ping a host to check if it's alive"""
@@ -106,7 +129,6 @@ def scan_network():
     network_prefix = '.'.join(local_ip.split('.')[:-1])
     subnet = f"{network_prefix}.0/24"
     iface = scapy.conf.route.route(local_ip)[0]
-
     arp_request = ARP(pdst=subnet)
     broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
     packet = broadcast / arp_request
@@ -133,6 +155,8 @@ def reverse_lookup(ip):
 def background_scan():
     while True:
         try:
+            scapy.conf.route.resync()  # <-- re-read the OS routing table fresh, don't trust scapy's cached copy
+
             devices = scan_network()
             seen_ips = {device['ip'] for device in devices}
 
@@ -183,3 +207,38 @@ def background_scan():
         except Exception as e:
             print(f"Background scan error: {e}")
         time.sleep(30)
+
+def run_ssh_command(host, username, command, timeout=10):
+    """
+    Runs a shell command and returns its output.
+
+    `command` can be a string ("ls -la") or a list (["ls", "-la"]), a list
+    is safer and preferred when any part of the command includes a variable
+    (hostname, IP, filename, etc), since it avoids shell interpretation of
+    that value entirely.
+
+    Returns a dict: {"stdout": str, "stderr": str, "returncode": int}
+    Raises RuntimeError if the command isn't found or times out.
+    """
+    password = os.getenv("ROUTER_SSH_PASSWORD")
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(host, username=username, password=password, timeout=timeout)
+        stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
+        output = stdout.read().decode()
+        error = stderr.read().decode()
+        return {
+            "stdout": output.strip(), 
+            "stderr": error.strip()
+        }
+    finally:
+        client.close()
+
+def lease_DHCP_time():
+    result = run_command(["ssh", "admin@192.168.0.1", "cat /tmp/dhcp.leases"])
+    return {
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "returncode": result.returncode
+    }

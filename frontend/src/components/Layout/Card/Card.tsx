@@ -5,7 +5,7 @@ interface ICard {
 }
 
 const Card: FunctionComponent<ICard> = ({children}) => {
-  return <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+  return <div className="rounded-lg p-6 w-full border bg-gray-800 border-gray-700">
     {children}
   </div>;
 };
