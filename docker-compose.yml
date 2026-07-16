@@ -2,7 +2,9 @@ services:
   backend:
     build:
       context: ./backend
-    network_mode: host
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -12,10 +14,19 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/frontend
-      - /frontend/node_modules
-    depends_on:
-      - backend
+    - "3000:3000"
+    # volumes:
+    #   - ./frontend:/frontend
+    #   - /frontend/node_modules
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /frontend/dist
+          initial_sync: true
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json

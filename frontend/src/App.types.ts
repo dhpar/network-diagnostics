@@ -1,3 +1,28 @@
+
+
+// 1. Create a plain object configuration
+const Status = {
+  Online: "online",
+  Offline: "offline",
+  Unknown: "unknown"
+} as const; // Makes all properties read-only literal types
+
+// 2. Extract the values into a reusable union type
+export type TStatusType = typeof Status[keyof typeof Status]; 
+
+export interface IDNSResult {
+  domain: string;
+  ip?: string;
+  time_ms?: number;
+  status: TStatusType;
+  error?: string;
+}
+
+export type TDevices = {
+  devices: IDevice[], 
+  count: number,
+}
+
 export interface IDevice {
   id?: number;
   ip: string;
@@ -6,7 +31,7 @@ export interface IDevice {
   vendor?: string;
   last_seen?: string;
   label?: string;
-  status: string;
+  status: TStatusType;
 }
 
 export interface IscanInfo {
@@ -22,18 +47,6 @@ export interface IWifiNetwork {
   security?: string;
 }
 
-export interface IDNSResult {
-  domain: string;
-  ip?: string;
-  time_ms?: number;
-  status: 'success' | 'failed' | 'Unknown';
-  error?: string;
-}
-
-export type TDevices = {
-  devices: IDevice[], 
-  count: number,
-}
 export type TWifiNetworks = IWifiNetwork[];
 export type TDNSResults = IDNSResult[];
 export type TTracerouteHop = {

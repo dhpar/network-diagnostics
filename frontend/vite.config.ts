@@ -6,6 +6,7 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 // https://vite.dev/config/
 export default defineConfig({
   server: {
+    host: true, // Exposes the directory to the local network
     port: 3000, // For development server
   },
   plugins: [

@@ -1,22 +1,5 @@
 import ROUTES from './routes';
 
-export async function fetchResource<T>(request:Request, requestInit?: RequestInit | undefined): Promise<T> {
-  try {
-    const response = await fetch(request, requestInit);
-    const result = await response.json();
-    console.groupCollapsed(`Fetch Resource ${request.url}}`);
-    console.log( request);
-    console.log("Request Init:", requestInit);
-    console.log(response);
-    console.log("Result:", result);
-    console.groupEnd();
-    return result as T;
-  } catch (error) {
-    console.error("Error:", error);
-    throw error;
-  }
-};
-
 export const headers = new Headers({
   'Access-Control-Allow-Origin': ROUTES.ORIGIN,
   'Access-Control-Allow-Method': '*',
@@ -42,6 +25,7 @@ export function postResource<T>(route:string, body: T) {
 }
 
 export function putResource<T>(route:string, body: T){
+  console.log("PUT Resource:", route, headers, body);
   return new Request(
     route, 
     {
@@ -51,3 +35,23 @@ export function putResource<T>(route:string, body: T){
     }
   );
 } 
+
+export async function fetchResource<T> (
+  request:Request, 
+  requestInit?: RequestInit | undefined
+): Promise<T> {  
+    const response = await fetch(request, requestInit);
+    const result = await response.json();
+    console.groupCollapsed(`Fetch Resource ${request.url}}`);
+    console.log( request);
+    console.log("Request Init:", requestInit);
+    console.log(response);
+    console.log("Result:", result);
+    console.groupEnd();
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      console.error(`Failed to fetch resource: ${response.status}`, body);
+      throw new Error(body.error ?? `Failed to fetch resource: ${response.status}`);
+    }
+    return result as T;
+};

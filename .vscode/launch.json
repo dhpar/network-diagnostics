@@ -4,6 +4,13 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        {
+            "type": "dockerfile",
+            "request": "launch",
+            "name": "Docker: Build",
+            "dockerfile": "Dockerfile",
+            "contextPath": "${workspaceFolder}"
+        },
        {
             "name": "Python Debugger: Flask",
             "type": "debugpy",
@@ -29,7 +36,7 @@
             "request": "launch",
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}/fronend",
+            "webRoot": "${workspaceFolder}/frontend",
             "preLaunchTask": "npm: dev - frontend",
             "skipFiles": [ "${workspaceFolder}/node_modules/**/*.js" ],
         },

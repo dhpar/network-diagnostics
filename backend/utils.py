@@ -105,7 +105,7 @@ def get_arp_table():
                 if len(parts) >= 3 and re.match(r'[\d.]+', parts[0]):
                     devices.append({
                         'ip': parts[0],
-                        'mac': parts[2] if parts[2] != '(incomplete)' else 'Unknown',
+                        'mac': parts[2] if parts[2] != '(incomplete)' else 'unknown',
                         'type': 'dynamic'
                     })
     except Exception as e:
@@ -178,13 +178,13 @@ def background_scan():
             now = datetime.now()
 
             for device in devices:
-                resolved_hostname = hostnames.get(device['ip']) or 'Unknown'
+                resolved_hostname = hostnames.get(device['ip']) or 'unknown'
                 c.execute('''INSERT OR REPLACE INTO devices 
                             (ip, mac, hostname, status, last_seen) 
                             VALUES (?, ?, ?, ?, ?)''',
                     (
                         device['ip'], 
-                        device.get('mac', 'Unknown'),
+                        device.get('mac', 'unknown'),
                         resolved_hostname,
                         'online',
                         now

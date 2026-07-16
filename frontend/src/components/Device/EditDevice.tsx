@@ -1,65 +1,57 @@
 import  type { KeyboardEvent, MouseEvent } from 'react'; 
-import { useCallback, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchResource, getResource, putResource } from '../../utils';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchResource, putResource } from '../../utils';
 import ROUTES from '../../routes';
-import type { IDevice, TDevices } from '../../App.types';
+import type { IDevice } from '../../App.types';
 
 interface EditDeviceProps {
     device: IDevice
 }
-type ILabel = { label: string };
 
 const EditDevice: React.FC<EditDeviceProps> = ({
-    device
+  device
 }) => {
-    if(!device || !device.mac) {
-        return "We need a MAC address to create a Label"
-    }
-    const queryClient = useQueryClient()
-    const [ deviceLabel, setDeviceLabel ] = useState<{label: string}>({
-      label: device.label ?? ''
-    });
-    const devicesRequestGet = getResource(ROUTES.DEVICES);
-    const devicesRequestPut = putResource(ROUTES.PUTDEVICELABEL(device?.mac), {label: deviceLabel});
-    
-    const { data } = useMutation<{'mac': string, 'label': string}>({
-      mutationKey: ['update device label'],
-      mutationFn: async () => {
-        const response = await fetch('/api/data', {
-          method: 'PUT',
-          body: JSON.stringify({ label: deviceLabel }),
-          headers: { 'Content-Type': 'application/json' },
-        })
-        if (!response.ok) {
-          throw new Error('Something went wrong.')
-        }
-        return await response.json()
+  const queryClient = useQueryClient();
+  const [ deviceLabel, setDeviceLabel ] = useState<string>('');
+  if(!device || !device.mac) {
+    return "We need a MAC address to create a Label"
+  }
+  
+  const mutation = useMutation<IDevice, Error, {mac: string, label:string}>({
+    mutationFn: async ({mac,label}) => {
+        const devicesRequestPut = putResource(ROUTES.PUTDEVICELABEL(mac), {label});
+        return await fetchResource(devicesRequestPut)
       },
-      onSettled: () => queryClient.invalidateQueries({ 
-        queryKey: ['update device label'] 
-      }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['devices'] });
+      },
     });
+  
+  const handleKeyDown = (event:KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && device.mac) {
+      setDeviceLabel(event.currentTarget.value);
 
-    const handleKeyDown = (event:KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') {
-          // Put your action here
-          console.log('Enter pressed! Submitting:', deviceLabel);
-          setDeviceLabel({label: event.currentTarget.value})
-        }
-    };
+      mutation.mutate({mac: device.mac, label: event.currentTarget.value} );
     
-    const handleEditClick = (event:MouseEvent<HTMLButtonElement>) => {
-
+      console.log('Enter pressed! Submitting:', deviceLabel);
     }
+  };
+  
+  const handleEditClick = (event:MouseEvent<HTMLButtonElement>) => {
+    if (device.mac) {
+      mutation.mutate({mac: device.mac, label: event.currentTarget.value});
+    }
+    // setDeviceLabel({label: event.currentTarget.value});
+  }
 
-    const handleDeleteClick = (event:MouseEvent<HTMLButtonElement>) => {}
+  const handleDeleteClick = (event:MouseEvent<HTMLButtonElement>) => {}
 
   return (
     <div className='flex align-middle gap-0.5'>
       <input
         type="text"
-        value={device.label || ''}
+        defaultValue={device.label || ''}
         onKeyDown={handleKeyDown}
         placeholder="Device name"
         className='px-0.5 py-1 bg-gray-800 rounded-lg border border-gray-700 min-w-28'
