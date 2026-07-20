@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Network, Clock } from "lucide-react"
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import Card from "./components/Layout/Card/Card";
 
 export default function Layout({
-  children,
-}: { children: ReactNode }) {
+  children, title, RefreshBtn
+}: { children: ReactNode, title?: string, RefreshBtn?:ComponentType }) {
   const [connected, setConnected] = useState<boolean>(false);
   const [lastUpdate, setLastUpdate] = useState<Date>();
 
@@ -16,8 +16,8 @@ export default function Layout({
   
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
-      <header className="bg-gray-800 border-b border-gray-700 shadow-lg">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-gray-800 border-b border-gray-700 shadow-lg px-8">
+        <div className="mx-auto py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Network className="w-8 h-8 text-blue-400" />
@@ -39,8 +39,12 @@ export default function Layout({
           </div>
         </div>
       </header>
-      <main className="flex mx-auto">
-        <aside className="flex flex-1/12 py-8 pl-4">
+      <main className="grid grid-cols-5 gap-4 my-4 mx-8">
+        <div className="col-span-4 col-start-2 flex w-full">
+          {title? <h2 className="flex-1 justify-between text-2xl font-bold">{title}</h2> : null}
+          {RefreshBtn ? <RefreshBtn/> : null}
+        </div>
+        <aside className="row-start-2">
           <Card>
             <nav className="flex flex-col gap-2 bg-gray-800 rounded-lg p-2 border border-gray-900">
                 <Link to="/" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
@@ -58,7 +62,7 @@ export default function Layout({
             </nav>
           </Card>
         </aside>
-        <div className="flex-11/12 container px-4 py-8">
+        <div className="col-span-4 row-start-2">
           {children}
         </div>
       </main>

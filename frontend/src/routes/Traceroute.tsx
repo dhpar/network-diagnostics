@@ -21,19 +21,15 @@ function Traceroute() {
     });
 
     if (isPending || isLoading) {
-        return <Layout>
-            <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Traceroute</h2>
-                    <button
+        return <Layout title={'Traceroute'} RefreshBtn={() => <button
                         onClick={() => refetch()}
                         disabled={isLoading}
                         className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
                     >
                         <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
                         <span>Refresh</span>
-                    </button>
-                </div>
+                    </button>}>
+            <div className="space-y-6">
                 <div className="space-y-6">
                     <div className="text-sm">Loading...</div>
                 </div>
@@ -43,19 +39,15 @@ function Traceroute() {
 
     if (isError) {
         return (
-        <Layout>
-            <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Traceroute</h2>
-                    <button
+        <Layout title={'Traceroute'} RefreshBtn={() => <button
                         onClick={() => refetch()}
                         disabled={isLoading}
                         className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
                     >
                         <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
                         <span>Refresh</span>
-                    </button>
-                </div>
+                    </button>}>
+            <div className="space-y-6">
                 <div className="space-y-6">
                     <div className="text-red-400 text-sm">
                         {`Error retrieving traceroute: ${error}`}
@@ -77,20 +69,15 @@ function Traceroute() {
     }
 
     return (
-        <Layout>
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Traceroute</h2>
-                <button
-                    onClick={() =>{ 
-                        refetch();
-                    }}
-                    disabled={isLoading}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-                >
-                    <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
-                    <span>Refresh</span>
-                </button>
-            </div>
+        <Layout title={'Traceroute'} RefreshBtn={() => <button
+                        onClick={() => refetch()}
+                        disabled={isLoading}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
+                        <span>Refresh</span>
+                    </button>}>
+            
             <h3 className="text-xl">Traceroute state: {data.reached? <span className="text-blue-500">Has reached the destination</span> :<span className="text-red-500">Hasn't reached the destination</span>}</h3>
             
             <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">

@@ -1,4 +1,5 @@
 import scapy.all as scapy
+from scapy.layers.l2 import ARP, Ether
 import re
 import time
 import socket
@@ -9,7 +10,6 @@ from platform import system
 from subprocess import run
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from scapy.layers.l2 import ARP, Ether
 from backend.database import get_db
     
 def get_local_ifaces():
@@ -84,12 +84,14 @@ def ping_host(ip):
 def get_arp_table():
     """Get ARP table entries"""
     devices = []
+    host_re = r'([\d.]+)\s+([\da-fA-F:-]+)\s+(\w+)'
     try:
+        result = run(['arp', '-a' if system() == "Windows" else '-n'], capture_output=True, text=True)
+        lines = result.stdout.split('\n')
+        
         if system() == "Windows":
-            result = run(['arp', '-a'], capture_output=True, text=True)
-            lines = result.stdout.split('\n')
             for line in lines:
-                match = re.search(r'([\d.]+)\s+([\da-fA-F:-]+)\s+(\w+)', line)
+                match = re.search(host_re, line)
                 if match:
                     devices.append({
                         'ip': match.group(1),
@@ -97,11 +99,9 @@ def get_arp_table():
                         'type': match.group(3)
                     })
         else:
-            result = run(['arp', '-n'], capture_output=True, text=True)
-            lines = result.stdout.split('\n')[1:]  # Skip header
-            for line in lines:
+            for line in lines[1:]: # Skip header
                 parts = line.split()
-                match = re.search(r'([\d.]+)\s+([\da-fA-F:-]+)\s+(\w+)', line)
+                match = re.search(host_re, line)
                 if len(parts) >= 3 and re.match(r'[\d.]+', parts[0]):
                     devices.append({
                         'ip': parts[0],
@@ -147,6 +147,7 @@ def scan_network():
 
 def reverse_lookup(ip):
     try:
+        hostname = socket.gethostbyaddr(ip)[0]
         return socket.gethostbyaddr(ip)[0]
     except (socket.herror, socket.gaierror, OSError):
         return None

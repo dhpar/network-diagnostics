@@ -17,7 +17,7 @@
             "request": "launch",
             "module": "flask",
             "python": "${workspaceFolder}/backend/venv/bin/python",
-            "preLaunchTask": "ensure-venv",
+            // "preLaunchTask": "ensure-venv",
             "env": {
                 "FLASK_APP": "backend/app.py",
                 "FLASK_DEBUG": "1"
