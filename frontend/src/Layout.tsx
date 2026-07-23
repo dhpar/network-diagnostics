@@ -1,14 +1,22 @@
 import { Link } from "@tanstack/react-router";
-import { Network, Clock } from "lucide-react"
-import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { Network, Clock, RefreshCw } from "lucide-react"
+import { useEffect, useState, type ReactNode, type MouseEvent } from "react";
 import Card from "./components/Layout/Card/Card";
+import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
+import type { TDevices } from "./App.types";
+
+type refetchFunction = (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<NoInfer<TDevices>, Error>>;
 
 export default function Layout({
-  children, title, RefreshBtn
-}: { children: ReactNode, title?: string, RefreshBtn?:ComponentType }) {
+  children, title, isRefreshLoading, refetch
+}: { children: ReactNode, title?: string, isRefreshLoading?:boolean, refetch?:refetchFunction }) {
   const [connected, setConnected] = useState<boolean>(false);
   const [lastUpdate, setLastUpdate] = useState<Date>();
-
+  const handleRefetchButton = (event:MouseEvent<HTMLButtonElement>, reGet:refetchFunction) => {
+    event.preventDefault();
+    reGet();
+    console.log('test');
+  }
   useEffect(() => {
         setConnected(navigator.onLine);
         setLastUpdate(new Date());
@@ -42,7 +50,15 @@ export default function Layout({
       <main className="grid grid-cols-5 gap-4 my-4 mx-8">
         <div className="col-span-4 col-start-2 flex w-full">
           {title? <h2 className="flex-1 justify-between text-2xl font-bold">{title}</h2> : null}
-          {RefreshBtn ? <RefreshBtn/> : null}
+          
+          {isRefreshLoading &&  refetch? <button
+        onClick={(e) => handleRefetchButton(e, refetch)}
+        disabled={isRefreshLoading}
+        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+    >
+        <RefreshCw className={`w-4 h-4 ${isRefreshLoading ? 'animate-spin' : ''}`} />
+        <span>Refresh</span>
+    </button> : null}
         </div>
         <aside className="row-start-2">
           <Card>

@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 from flask.app import Flask
+from backend.mac_utils import get_net_mask
 from backend.traceroute import traceroute_host
-from backend.utils import get_local_ip, get_gateway, get_net_mask, lease_DHCP_time, ping_host
+from backend.utils import get_local_ip, get_gateway, lease_DHCP_time, ping_host
 from backend.database import delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
 from backend.wifi import get_wifi_scan_from_windows
 from flask import request, jsonify, abort, Blueprint, request, current_app

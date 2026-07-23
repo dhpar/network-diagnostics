@@ -40,5 +40,11 @@
             "preLaunchTask": "npm: dev - frontend",
             "skipFiles": [ "${workspaceFolder}/node_modules/**/*.js" ],
         },
+    ],
+    "compounds": [
+        {
+        "name": "Server + Client",
+        "configurations": ["Python Debugger: Flask", "Launch Chrome against localhost"]
+        }
     ]
 }

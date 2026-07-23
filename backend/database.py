@@ -1,7 +1,30 @@
 from datetime import datetime
 import os
-import sqlite3
+import sqlite3;
+from typing import TypedDict
 
+class Device(TypedDict):
+    id: int
+    mac: str
+    ip: str
+    hostname: str | None
+    vendor: str | None
+    last_seen: datetime
+    status: str | None
+    vendor: str | None
+    
+class network_scans(TypedDict):
+    id: int
+    scan_type: str
+    timestamp: datetime
+    results: str
+
+class Mac_w_Label(TypedDict):
+    id: int
+    mac: str
+    label: str | None
+    updated_at: str | None
+    
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'network_diagnostics.db')
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -15,14 +38,15 @@ def init_db():
             CREATE TABLE IF NOT EXISTS 
                 devices (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ip TEXT UNIQUE,
-                    mac TEXT,
+                    mac TEXT UNIQUE NOT NULL,
+                    random_mac BOOLEAN,
+                    ip TEXT,
                     hostname TEXT,
                     vendor TEXT,
                     last_seen TIMESTAMP,
                     status TEXT
                 )
-            ''')
+        ''')
 
         c.execute('''
             CREATE TABLE IF NOT EXISTS 
@@ -49,37 +73,53 @@ def init_db():
 
         conn.commit()
     
-
-def insert_or_replace_device_db( device, resolved_hostname, now):
+def insert_or_replace_device_db(device:Device, resolved_hostname, now, random_mac):
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
+        ip = device.get('ip') or 'Unknown'
+        mac = device.get('mac') or 'Unknown'
+        vendor = device.get('vendor') or 'Unknown'
+        hostname = device.get('hostname') or resolved_hostname or 'Unknown'
+        random_mac = bool(device.get('random_mac'))
+        
         c.execute('''
-            INSERT OR REPLACE INTO 
-                devices (ip, mac, hostname, status, last_seen) 
+            INSERT INTO 
+                devices (
+                    mac, random_mac, ip, hostname, status, vendor, last_seen)
             VALUES 
-                (?, ?, ?, ?, ?)
-            ''',
-            (device['ip'], device.get('mac', 'unknown'), resolved_hostname, 'online', now)
+                (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(mac) DO UPDATE SET
+                ip = CASE WHEN ip IS NOT excluded.ip THEN excluded.ip ELSE ip END,
+                random_mac = CASE WHEN random_mac IS NOT excluded.random_mac THEN excluded.random_mac ELSE random_mac END,
+                hostname = CASE WHEN hostname IS NOT excluded.hostname THEN excluded.hostname ELSE hostname END,
+                status = CASE WHEN status IS NOT excluded.status THEN excluded.status ELSE status END,
+                vendor = CASE WHEN vendor IS NOT excluded.vendor THEN excluded.vendor ELSE vendor END,
+                last_seen = excluded.last_seen
+            ''', 
+            (
+                mac, random_mac, ip, hostname, 'online', vendor, now
+            )
         )
     
-    
-def get_devices_with_label_db():
+def get_devices_with_label_db() -> list[Device]:
     with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
         c = conn.cursor()
+        
         rows = c.execute('''
             SELECT 
-                d.ip, d.mac, d.hostname, d.last_seen, d.status, l.label
+                d.ip, d.mac, d.random_mac, d.hostname, d.vendor, d.last_seen, d.status, l.label
             FROM 
                 devices d
             LEFT JOIN 
                 device_labels l ON UPPER(d.mac) = l.mac
             ORDER BY 
-                d.last_seen 
-            DESC
+                length(d.ip) ASC, d.ip 
+            ASC
         ''')
         rows_list = rows.fetchall()
-        dict_rows = [dict(row) for row in rows_list]
-        return dict_rows
+    
+        return rows_list
 
 def update_devices_label_db(normalized_mac, label):
     with sqlite3.connect(DB_PATH) as conn:
@@ -95,8 +135,7 @@ def update_devices_label_db(normalized_mac, label):
             (normalized_mac, label, datetime.now())
         )
         conn.commit()
-    
-    
+      
 def delete_label_db(normalized_mac, label):
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()

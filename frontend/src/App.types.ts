@@ -27,6 +27,7 @@ export interface IDevice {
   id?: number;
   ip: string;
   mac?: string;
+  random_mac?: 0 | 1;
   hostname?: string;
   vendor?: string;
   last_seen?: string;

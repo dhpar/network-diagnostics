@@ -36,6 +36,16 @@ export function putResource<T>(route:string, body: T){
   );
 } 
 
+export function deleteResource<T>(route:string, body: T){
+  return new Request(
+    route,
+    {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify(body),
+    }
+  );
+}
 export async function fetchResource<T> (
   request:Request, 
   requestInit?: RequestInit | undefined

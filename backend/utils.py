@@ -1,4 +1,5 @@
 import scapy.all as scapy
+from scapy.layers.inet import ICMP, IP
 from scapy.layers.l2 import ARP, Ether
 import re
 import time
@@ -10,7 +11,9 @@ from platform import system
 from subprocess import run
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from backend.database import get_db
+from scapy.sendrecv import srp
+from backend.database import insert_or_replace_device_db
+from backend.mac_utils import is_locally_administered_mac, mac_lookup_vendor
     
 def get_local_ifaces():
     return scapy.conf.ifaces
@@ -33,43 +36,6 @@ def get_gateway():
             return "%i.%i.%i.%i" % (int(hip[6:8], 16), int(hip[4:6], 16), int(hip[2:4], 16), int(hip[0:2], 16))
     except Exception:
         print("Error getting default gateway (get_gateway)")
-        
-def get_net_mask():
-    """
-    Returns the CIDR prefix length (e.g. 24) of the local machine's subnet,
-    derived from scapy's routing table.
-
-    Normally excludes /32 (host-specific) and multicast routes when looking
-    for the real LAN subnet. But if NOTHING else qualifies, that itself is a
-    signal we're likely on a VPN's point-to-point tunnel, where /32 is the
-    genuinely correct answer, not a host-route artifact, so we fall back to
-    allowing it in that case.
-    """
-    local_ip = get_local_ip()
-
-    def collect_candidates(allow_host_routes):
-        found = []
-        for net, msk, gw, iface, addr, metric in scapy.conf.route.routes:
-            if addr != local_ip or gw != '0.0.0.0':
-                continue
-            if not allow_host_routes and msk == 0xFFFFFFFF:
-                continue
-            if 0xE0000000 <= net <= 0xEFFFFFFF:  # 224.0.0.0/4 multicast range
-                continue
-            found.append((net, msk))
-        return found
-
-    candidates = collect_candidates(allow_host_routes=False)
-
-    if not candidates:
-        # Nothing but /32 and multicast entries matched, likely a VPN tunnel
-        candidates = collect_candidates(allow_host_routes=True)
-
-    if not candidates:
-        return None
-
-    _, msk = min(candidates, key=lambda pair: bin(pair[1]).count('1'))
-    return bin(msk).count('1')
 
 def ping_host(ip):
     """Ping a host to check if it's alive"""
@@ -148,9 +114,28 @@ def scan_network():
 def reverse_lookup(ip):
     try:
         hostname = socket.gethostbyaddr(ip)[0]
-        return socket.gethostbyaddr(ip)[0]
+        return hostname
     except (socket.herror, socket.gaierror, OSError):
         return None
+
+# This function is not yet implemented, nor called anywhere, but should check if a device that has an assigned IP is answering or not answering (not necessarly offline).
+def is_device_online(ip_address):
+    # Create an ARP packet asking "who has the IP?"
+    arp_request = ARP(pdst=ip_address)
+    # Broadcast the request over Layer 2 (Ethernet)
+    broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
+    packet = broadcast / arp_request
+    
+    # Send the packet and wait for a response
+    answered, unanswered = srp(packet, timeout=2, verbose=False)
+    
+    # If the answered list has items, the device is online and returned its MAC address
+    if answered:
+        print(f"Device {ip_address} is answering. MAC: {answered[0][1].hwsrc}")
+        return True
+    else:
+        print(f"Device {ip_address} is not answering.")
+        return False
     
 # Background network scanning
 def background_scan():
@@ -159,51 +144,28 @@ def background_scan():
             scapy.conf.route.resync()  # <-- re-read the OS routing table fresh, don't trust scapy's cached copy
 
             devices = scan_network()
-            seen_ips = {device['ip'] for device in devices}
-
+            
             # Resolve hostnames in parallel (reverse DNS via the router's
             # local resolver, works for devices whose DHCP lease got a
             # hostname registered, not guaranteed for every device type)
             hostnames = {}
             if devices:
                 with ThreadPoolExecutor(max_workers=min(8, len(devices))) as executor:
-                    futures = {d['ip']: executor.submit(reverse_lookup, d['ip']) for d in devices}
+                    futures = { d['ip']: executor.submit(reverse_lookup, d['ip']) for d in devices }
+                 
                     for ip, future in futures.items():
                         try:
                             hostnames[ip] = future.result(timeout=1.5)
                         except Exception:
                             hostnames[ip] = None
 
-            conn = get_db()
-            c = conn.cursor()
             now = datetime.now()
 
             for device in devices:
                 resolved_hostname = hostnames.get(device['ip']) or 'unknown'
-                c.execute('''INSERT OR REPLACE INTO devices 
-                            (ip, mac, hostname, status, last_seen) 
-                            VALUES (?, ?, ?, ?, ?)''',
-                    (
-                        device['ip'], 
-                        device.get('mac', 'unknown'),
-                        resolved_hostname,
-                        'online',
-                        now
-                    )
-                )
-
-            if seen_ips:
-                placeholders = ','.join('?' * len(seen_ips))
-                c.execute(
-                    f"UPDATE devices SET status = 'offline' "
-                    f"WHERE ip NOT IN ({placeholders}) AND status != 'offline'",
-                    tuple(seen_ips)
-                )
-            else:
-                c.execute("UPDATE devices SET status = 'offline' WHERE status != 'offline'")
-
-            conn.commit()
-            conn.close()
+                device['vendor'] = mac_lookup_vendor(device['mac'])
+                device['random_mac'] = is_locally_administered_mac(device['mac'])
+                insert_or_replace_device_db(device, resolved_hostname, now, is_locally_administered_mac)
 
         except Exception as e:
             print(f"Background scan error: {e}")
@@ -243,3 +205,15 @@ def lease_DHCP_time():
         "stderr": result.stderr,
         "returncode": result.returncode
     }
+
+def guess_os_family(ip):
+    reply = scapy.sr1(IP(dst=ip)/ICMP(), timeout=1, verbose=0)
+    if reply is None:
+        return None
+    ttl = reply.ttl
+    if ttl <= 64:
+        return "Linux/Android/Unix-like"
+    elif ttl <= 128:
+        return "Windows"
+    else:
+        return "Network device (router/switch)"

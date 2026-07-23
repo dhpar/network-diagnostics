@@ -11,6 +11,13 @@ I'm still actively building this, here's what works so far:
 - ✅ DNS Diagnostics.
 - ✅ Real-time Updates.
 - ❌ WiFi Scanning.
+- ❌ Extending network discovery capabilities.
+- ❌ Creating "easy to debug network" issues page, ie:
+  - There is isues reaching the wifi.
+  - Can't reach the router.
+  - Issues with the DNS.
+  - Maybe issues with DHCP.
+  - ...
 
 ## Features (MVP)
 

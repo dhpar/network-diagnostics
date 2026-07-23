@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Activity, Globe, Waypoints, RefreshCw, Network, Circle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import type { INetworkInfo } from "../hooks/useNetworkInfo";
 import type { IscanInfo, TDevices } from "../App.types";
 import { ErrorBoundary } from "react-error-boundary";
 import { getResource, fetchResource } from '../utils';
@@ -32,7 +31,7 @@ function Index() {
         networkInfo.data.local_ip : 
         networkInfo.error?.message || 'Error!'
     return (
-      <Layout>
+      <Layout title='Dashboard'>
         <div className="space-y-6">
             {/* Network Info Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -68,7 +67,7 @@ function Index() {
                     <ErrorBoundary
                         fallbackRender={({ error }) => (
                         <div className="p-4 bg-red-900/20 border border-red-900 rounded-lg">
-                        <p className="text-red-500">Something went wrong: {error.message}</p>
+                        <p className="text-red-500">Something went wrong: { error instanceof Error ? error.message : String(error) }</p>
                         </div>
                     )}
                     >
