@@ -8,7 +8,7 @@ from backend.mac_utils import get_net_mask
 from backend.traceroute import traceroute_host
 from backend.utils import get_local_ip, get_gateway, lease_DHCP_time, ping_host
 from backend.database import delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
-from backend.wifi import get_wifi_scan_from_windows
+from backend.windows.wifi_scan import get_wifi_scan_from_windows
 from flask import request, jsonify, abort, Blueprint, request, current_app
 import socket
 
@@ -89,10 +89,14 @@ def wifi_scan():
     """Scan for nearby WiFi networks via native Windows Python (WSL has no radio access)"""
     try:
         networks = get_wifi_scan_from_windows()
-        return jsonify({
-            'networks': networks, 
-            'count': len(networks)
-        })
+        if networks:
+            return jsonify({
+                'networks': networks, 
+                'count': len(networks)
+            })
+        else:
+            return 'No networks found'
+         
     except Exception as e:
         print(f"WiFi scan error: {e}")
         return jsonify({'error': 'WiFi scanning requires a native Windows Python with pywifi installed'}), 500

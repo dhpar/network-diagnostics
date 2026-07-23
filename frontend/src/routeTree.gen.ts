@@ -9,19 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TracerouteRouteImport } from './routes/Traceroute'
-import { Route as DevicesRouteImport } from './routes/Devices'
-import { Route as DNSRouteImport } from './routes/DNS'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DNSRouteImport } from './routes/DNS'
+import { Route as DevicesRouteImport } from './routes/Devices'
+import { Route as TracerouteRouteImport } from './routes/Traceroute'
 
-const TracerouteRoute = TracerouteRouteImport.update({
-  id: '/Traceroute',
-  path: '/Traceroute',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevicesRoute = DevicesRouteImport.update({
-  id: '/Devices',
-  path: '/Devices',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DNSRoute = DNSRouteImport.update({
@@ -29,9 +24,14 @@ const DNSRoute = DNSRouteImport.update({
   path: '/DNS',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DevicesRoute = DevicesRouteImport.update({
+  id: '/Devices',
+  path: '/Devices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TracerouteRoute = TracerouteRouteImport.update({
+  id: '/Traceroute',
+  path: '/Traceroute',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -71,18 +71,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/Traceroute': {
-      id: '/Traceroute'
-      path: '/Traceroute'
-      fullPath: '/Traceroute'
-      preLoaderRoute: typeof TracerouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/Devices': {
-      id: '/Devices'
-      path: '/Devices'
-      fullPath: '/Devices'
-      preLoaderRoute: typeof DevicesRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/DNS': {
@@ -92,11 +85,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DNSRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/Devices': {
+      id: '/Devices'
+      path: '/Devices'
+      fullPath: '/Devices'
+      preLoaderRoute: typeof DevicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/Traceroute': {
+      id: '/Traceroute'
+      path: '/Traceroute'
+      fullPath: '/Traceroute'
+      preLoaderRoute: typeof TracerouteRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

@@ -17,7 +17,7 @@ def get_wifi_scan_from_windows():
         ["wslpath", "-w", script_path_wsl],
         capture_output=True, text=True, check=True
     )
-    windows_script_path = converted.stdout.strip()
+    windows_script_path = converted.stdout.strip().replace('/', '\\')
 
     proc = subprocess.run(
         ["python.exe", windows_script_path],
