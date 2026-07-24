@@ -3,16 +3,31 @@ Runs natively on Windows (NOT inside WSL) since it needs the Windows
 Native WiFi API to read signal data, something WSL2 has no access to.
 Outputs JSON to stdout so the WSL-side backend can consume it via subprocess.
 
-Requires a SEPARATE install: run this using Windows Python, and
+Requires a SEPARATE install: run this using Windows Python (ie: installing it directly on powershell or bash and then we need to, using that python interpreter install pywifi), and
 `pip install pywifi` under that same Windows Python, not your WSL venv.
 """
-import importlib
-import subprocess
 import json
 import sys
-import scapy.all as scapy
-from scapy.layers.dot11 import Dot11
+import time
+import pywifi
 
+def scan_wifi(scan_wait_seconds=4):
+    wifi = pywifi.PyWiFi()
+    iface = wifi.interfaces()[0]  # first WiFi adapter Windows sees
+
+    iface.scan()
+    time.sleep(scan_wait_seconds)  # Windows needs a moment to finish scanning
+    results = iface.scan_results()
+
+    return [
+        {
+            "ssid": net.ssid,
+            "bssid": net.bssid,
+            "signal_dbm": net.signal,
+            "freq_mhz": net.freq,
+        }
+        for net in results
+    ]
 
 def get_windows_python_path():
     """
@@ -122,8 +137,8 @@ def callBack(pkg):
         }
           
             
-def scan_wifi(scan_wait_seconds=4):
-    return get_wifi_scan_from_windows()
+# def scan_wifi(scan_wait_seconds=4):
+    # return get_wifi_scan_from_windows()
     # wifi = pywifi.PyWiFi()
     # iface = wifi.interfaces()[0]  # first WiFi adapter Windows sees
 
