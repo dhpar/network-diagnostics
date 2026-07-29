@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import scapy.all as scapy
 from scapy.layers.inet import ICMP, IP
 from scapy.layers.l2 import ARP, Ether
@@ -6,7 +7,6 @@ import time
 import socket
 import paramiko
 import os
-from flask.cli import run_command
 from platform import system
 from subprocess import run
 from datetime import datetime
@@ -14,13 +14,14 @@ from concurrent.futures import ThreadPoolExecutor
 from scapy.sendrecv import srp
 from backend.database import insert_or_replace_device_db
 from backend.mac_utils import is_locally_administered_mac, mac_lookup_vendor
-    
-def get_local_ifaces():
-    return scapy.conf.ifaces
+from dataclasses import dataclass, field
 
-def get_local_ip():
-    default_if = scapy.conf.route.route(scapy.conf.iface.ip)[1]
-    return default_if
+@dataclass
+class net_config:
+    local_iface: str = scapy.conf.iface.name
+    local_ifaces: list[str] = field(default_factory = scapy.conf.ifaces)
+    local_ip: str = scapy.conf.route.route(scapy.conf.iface.ip)[1]
+    gateway_ip: str = scapy.conf.route.route("8.8.8.8")
 
 def get_gateway():
     try:
@@ -52,8 +53,8 @@ def get_arp_table():
     devices = []
     host_re = r'([\d.]+)\s+([\da-fA-F:-]+)\s+(\w+)'
     try:
-        result = run(['arp', '-a' if system() == "Windows" else '-n'], capture_output=True, text=True)
-        lines = result.stdout.split('\n')
+        arp_command = run(['arp', '-a' if system() == "Windows" else '-n'], capture_output=True, text=True)
+        lines = arp_command.stdout.split('\n')
         
         if system() == "Windows":
             for line in lines:
@@ -80,7 +81,8 @@ def get_arp_table():
     return devices
 
 def scan_network():
-    """Scan local network for devices using a broadcast ARP request (scapy).
+    """
+    Scan local network for devices using a broadcast ARP request (scapy).
 
     This sends a single ARP 'who-has' broadcast across the /24 subnet and
     collects replies, which is both faster and more reliable than pinging
@@ -91,25 +93,32 @@ def scan_network():
     different mask, adjust the `subnet` line below accordingly.
     Requires elevated privileges (sudo) since it sends raw Ethernet frames.
     """
-    local_ip = get_local_ip()
-    network_prefix = '.'.join(local_ip.split('.')[:-1])
+ 
+    network_prefix = net_config.local_ip.rsplit('.', 1)[0]
+    if not network_prefix:
+        return []
+
     subnet = f"{network_prefix}.0/24"
-    iface = scapy.conf.route.route(local_ip)[0]
-    arp_request = ARP(pdst=subnet)
-    broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
-    packet = broadcast / arp_request
+    packet = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=subnet)
 
-    answered, _ = scapy.srp(packet, timeout=3, iface=iface, verbose=0)
-
-    devices = []
-    for _, received in answered:
-        devices.append({
+    
+    answered, _ = scapy.srp(
+        packet,
+        timeout=3,
+        iface=net_config.local_iface,
+        verbose=0,
+    )
+    
+    # Lambda loop function
+    return [
+        {
             'ip': received.psrc,
             'mac': received.hwsrc,
             'status': 'online'
-        })
-
-    return devices
+        }
+        for _, received in answered
+        if hasattr(received, 'psrc') and hasattr(received, 'hwsrc')
+    ]
 
 def reverse_lookup(ip):
     try:
@@ -171,7 +180,7 @@ def background_scan():
             print(f"Background scan error: {e}")
         time.sleep(30)
 
-def run_ssh_command(host, username, command, timeout=10):
+def run_ssh_command(host: str, username: str, command: str, timeout=10) -> dict[str, str]:
     """
     Runs a shell command and returns its output.
 
@@ -183,10 +192,18 @@ def run_ssh_command(host, username, command, timeout=10):
     Returns a dict: {"stdout": str, "stderr": str, "returncode": int}
     Raises RuntimeError if the command isn't found or times out.
     """
+    load_dotenv('/home/david/coding/network-diagnostics/backend/.env.backend.dev')
     password = os.getenv("ROUTER_SSH_PASSWORD")
     client = paramiko.SSHClient()
+    
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
+        client.connect(
+            hostname=host, 
+            username=username, 
+            password=password,
+            timeout=timeout
+        )
         client.connect(host, username=username, password=password, timeout=timeout)
         stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
         output = stdout.read().decode()
@@ -199,15 +216,22 @@ def run_ssh_command(host, username, command, timeout=10):
         client.close()
 
 def lease_DHCP_time():
-    result = run_command(["ssh", "admin@192.168.0.1", "cat /tmp/dhcp.leases"])
+    result = run_ssh_command("192.168.0.1", "admin", "cat /tmp/dhcp.leases")
+    stdout = result.get('stdout')
+    error = result.get('error')
+    
     return {
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-        "returncode": result.returncode
+        "stdout": stdout,
+        "stderr": error,
     }
 
 def guess_os_family(ip):
-    reply = scapy.sr1(IP(dst=ip)/ICMP(), timeout=1, verbose=0)
+    reply = scapy.sr1(
+        IP(dst=ip)/ICMP(), 
+        timeout=1, 
+        verbose=0
+    )
+    
     if reply is None:
         return None
     ttl = reply.ttl

@@ -61,7 +61,10 @@ export async function fetchResource<T> (
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       console.error(`Failed to fetch resource: ${response.status}`, body);
-      throw new Error(body.error ?? `Failed to fetch resource: ${response.status}`);
+      throw new Error(body.error ?? `
+        Failed to fetch resource: ${response.status}
+        ${body.error.message ? `Message: ${body.error.message}` : ''}
+      `);
     }
     return result as T;
 };

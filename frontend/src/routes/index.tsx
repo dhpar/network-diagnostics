@@ -20,16 +20,16 @@ function Index() {
     queryFn: () => fetchResource<TDevices>(devicesRequest)
   });
   const networkInfoRequest = getResource(ROUTES.NETWORK_INFO);  
-  const networkInfo = useQuery({ 
+  const {data, error, isError, isLoading } = useQuery({ 
     queryKey: ['Net Info'], 
     queryFn: () => fetchResource<IscanInfo>(networkInfoRequest)
   });
     const getStatusColor = (status: string) => 
         status === 'online' ? 'text-green-500' : 'text-red-500';
     const devicesValue = devices.data && !devices.isError? devices.data.devices.filter(d => d.status === 'online').length.toString() : devices.error?.message || 'Error!';
-    const ipValue = !networkInfo.isError && networkInfo.data?.local_ip? 
-        networkInfo.data.local_ip : 
-        networkInfo.error?.message || 'Error!'
+    const ipValue = !isError && data?.local_ip? 
+        data.local_ip : 
+        error?.message || 'Error!'
     return (
       <Layout title='Dashboard'>
         <div className="space-y-6">
@@ -44,23 +44,23 @@ function Index() {
                                 className="w-6 h-6 text-transparent" /> 
                         } 
                         value={ipValue}
-                        isLoading={networkInfo.isLoading}
+                        isLoading={isLoading}
                     />
                 </Card>
                 <Card>
                     <Device 
                         label={'Gateway'} 
                         icon={ <Network stroke={`var(--color-green-400)`} className="w-6 h-6 text-transparent" /> } 
-                        value={!networkInfo.isError && networkInfo.data?.gateway? networkInfo.data.gateway : networkInfo.error?.message || 'Error!'}
-                        isLoading={networkInfo.isLoading}
+                        value={!isError && data?.gateway? data.gateway : error?.message || 'Error!'}
+                        isLoading={isLoading}
                     />
                 </Card>
                 <Card>
                     <Device 
                         label={'Subnet'} 
                         icon={ <Waypoints stroke={`var(--color-purple-400)`} className="w-6 h-6 text-transparent" /> } 
-                        value={!networkInfo.isError && networkInfo.data?.subnet? networkInfo.data?.subnet : networkInfo.error?.message || 'Error!'}
-                        isLoading={networkInfo.isLoading}
+                        value={!isError && data?.subnet? data?.subnet : error?.message || 'Error!'}
+                        isLoading={isLoading}
                     />
                 </Card>
                 <Card>
