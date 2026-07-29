@@ -26,64 +26,63 @@ transition.
 
 ## DONE
 
-### Phase 1: Prepare the Windows environment
+~~ ### Phase 1: Prepare the Windows environment ~~
 
-#### Step 1: Install a native Windows Python runtime
+~~#### Step 1: Install a native Windows Python runtime~~
 
-**What is needed:**
+~~**What is needed:**~~
 
-- Install Python from python.org, not the Microsoft Store version
-- Make sure Python is added to PATH
-- Verify that `python --version` and `pip --version` work from PowerShell
+~~- Install Python from python.org, not the Microsoft Store version~~
+~~- Make sure Python is added to PATH~~
+~~- Verify that `python --version` and `pip --version` work from PowerShell~~
 
-**Why:**
+~~**Why:**~~
 
-- The current project has already hit issues with the Microsoft Store Python
-  runtime, especially around Windows networking and COM-based access.
-- A standard python.org installation is more predictable and better suited to
-  this project’s low-level networking dependencies.
-- This avoids the sandboxed runtime behavior that has already caused friction
-  with Wi-Fi scanning.
+~~- The current project has already hit issues with the Microsoft Store Python~~
+~~  runtime, especially around Windows networking and COM-based access.~~
+~~- A standard python.org installation is more predictable and better suited to~~
+~~  this project’s low-level networking dependencies.~~
+~~- This avoids the sandboxed runtime behavior that has already caused friction~~
+~~  with Wi-Fi scanning.~~
 
-#### Step 2: Install Windows networking prerequisites
+~~#### Step 2: Install Windows networking prerequisites~~
 
-**What is needed:**
+~~**What is needed:**~~
 
-- Install Npcap or other WinPcap-compatible networking capture support
-- Ensure the installation is configured in a way compatible with Windows
-  network tools
-- Optionally install Visual C++ build tools if any dependency requires
-  compilation
+~~- Install Npcap or other WinPcap-compatible networking capture support~~
+~~- Ensure the installation is configured in a way compatible with Windows~~
+~~  network tools~~
+~~- Optionally install Visual C++ build tools if any dependency requires~~
+~~  compilation~~
 
-**Why:**
+~~**Why:**~~
 
-- Some network features may require lower-level packet access or Windows
-  driver-level integration.
-- Npcap is the most practical Windows equivalent to the packet-capture
-  tooling that the project has depended on indirectly.
-- This is especially relevant if Wi-Fi scanning, ARP work, or packet
-  inspection needs deeper access later.
+~~- Some network features may require lower-level packet access or Windows~~
+~~  driver-level integration.~~
+~~- Npcap is the most practical Windows equivalent to the packet-capture~~
+~~  tooling that the project has depended on indirectly.~~
+~~- This is especially relevant if Wi-Fi scanning, ARP work, or packet~~
+~~  inspection needs deeper access later.~~
+~~
+~~#### Step 3: Install Node.js, Git, and VS Code for Windows~~
 
-#### Step 3: Install Node.js, Git, and VS Code for Windows
+~~**What is needed:**~~
 
-**What is needed:**
+~~- Install Node.js LTS~~
+~~- Install Git for Windows~~
+~~- Install Visual Studio Code and confirm that the Python extension is~~
+  ~~available~~
 
-- Install Node.js LTS
-- Install Git for Windows
-- Install Visual Studio Code and confirm that the Python extension is
-  available
+~~**Why:**~~
 
-**Why:**
-
-- The frontend is a Vite and React app and should work normally on Windows
-  with standard Node tooling.
-- A native Git installation prevents path and line-ending issues that can
-  arise when working across WSL and Windows filesystems.
-- VS Code will be the main development environment for both frontend and
-  backend work.
+~~- The frontend is a Vite and React app and should work normally on Windows~~
+  with standard Node tooling.~~
+~~- A native Git installation prevents path and line-ending issues that can~~
+  arise when working across WSL and Windows filesystems.~~
+~~- VS Code will be the main development environment for both frontend and~~
+ ~~ backend work.~~
 
 ---
-
 
 ### Phase 2: Move the repository to a native Windows filesystem
 
@@ -101,7 +100,7 @@ transition.
   normal Windows drive.
 - This avoids path translation issues that can appear when Python, Node, and
   VS Code interact with WSL-mounted files.
-- It also makes future debugging and packaging easier.
+- It also makes future debugging and packaging easier. 
 
 #### Step 5: Create a Windows virtual environment
 
