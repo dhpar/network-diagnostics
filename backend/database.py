@@ -4,7 +4,7 @@ import sqlite3;
 from typing import TypedDict
 
 class Device(TypedDict):
-    id: int
+    id: int | None
     mac: str
     ip: str
     hostname: str | None
@@ -12,6 +12,7 @@ class Device(TypedDict):
     last_seen: datetime
     status: str | None
     vendor: str | None
+    random_mac: bool | None
     
 class network_scans(TypedDict):
     id: int

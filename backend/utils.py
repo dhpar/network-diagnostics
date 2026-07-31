@@ -1,4 +1,5 @@
-from dotenv import load_dotenv
+from typing import List
+# from dotenv import load_dotenv
 import scapy.all as scapy
 from scapy.layers.inet import ICMP, IP
 from scapy.layers.l2 import ARP, Ether
@@ -12,7 +13,7 @@ from subprocess import run
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from scapy.sendrecv import srp
-from backend.database import insert_or_replace_device_db
+from backend.database import Device, insert_or_replace_device_db
 from backend.mac_utils import is_locally_administered_mac, mac_lookup_vendor
 from dataclasses import dataclass, field
 
@@ -81,7 +82,7 @@ def get_arp_table():
     
     return devices
 
-def scan_network():
+def scan_network() -> List[Device | None]:
     """
     Scan local network for devices using a broadcast ARP request (scapy).
 
@@ -109,17 +110,27 @@ def scan_network():
         iface=net_config.local_iface,
         verbose=0,
     )
+    now = datetime.now()
+    device:List[Device | None] = []
+    for _, received in answered:
+        if hasattr(received, 'psrc') and hasattr(received, 'hwsrc'):
+            device.append({
+                "id": None, 
+                "ip": received.psrc, 
+                "mac": received.hwsrc,
+                "hostname": None,
+                "vendor": None,
+                "last_seen": now,
+                "status": None,
+                "random_mac": None
+            })
+        else:
+            device.append(None)
     
+    return device
+      
     # Lambda loop function
-    return [
-        {
-            'ip': received.psrc,
-            'mac': received.hwsrc,
-            'status': 'online'
-        }
-        for _, received in answered
-            if hasattr(received, 'psrc') and hasattr(received, 'hwsrc')
-    ]
+
 
 def reverse_lookup(ip):
     try:
@@ -148,7 +159,7 @@ def is_device_online(ip_address):
         return False
     
 # Background network scanning
-def background_scan():
+def background_scan() -> List[Device]:
     while True:
         try:
             scapy.conf.route.resync()  # <-- re-read the OS routing table fresh, don't trust scapy's cached copy
@@ -161,7 +172,11 @@ def background_scan():
             hostnames = {}
             if devices:
                 with ThreadPoolExecutor(max_workers=min(8, len(devices))) as executor:
-                    futures = { d['ip']: executor.submit(reverse_lookup, d['ip']) for d in devices }
+                    for device in devices:
+                        if device is not None:
+                            ip = reverse_lookup(device["ip"])
+                            device['ip'] = ip if ip is not None else device['ip']
+                            # futures = { d['ip']: executor.submit(reverse_lookup, d['ip']) for d in devices }
                  
                     for ip, future in futures.items():
                         try:
@@ -172,59 +187,63 @@ def background_scan():
             now = datetime.now()
 
             for device in devices:
-                resolved_hostname = hostnames.get(device['ip']) or 'unknown'
-                device['vendor'] = mac_lookup_vendor(device['mac'])
-                device['random_mac'] = is_locally_administered_mac(device['mac'])
-                insert_or_replace_device_db(device, resolved_hostname, now, is_locally_administered_mac)
+                if device is not None:
+                    resolved_hostname = hostnames.get(device['ip']) or 'unknown'
+                    device['vendor'] = mac_lookup_vendor(device['mac'])
+                    device['random_mac'] = is_locally_administered_mac(device['mac'])
+                    insert_or_replace_device_db(device, resolved_hostname, now, is_locally_administered_mac)
 
         except Exception as e:
             print(f"Background scan error: {e}")
         time.sleep(30)
 
-def run_ssh_command(host: str, username: str, command: str, timeout=10) -> dict[str, str]:
-    """
-    Runs a shell command and returns its output.
+# def run_ssh_command(host: str, username: str, command: str, timeout=10) -> dict[str, str]:
+#     """
+#     Runs a shell command and returns its output.
 
-    `command` can be a string ("ls -la") or a list (["ls", "-la"]), a list
-    is safer and preferred when any part of the command includes a variable
-    (hostname, IP, filename, etc), since it avoids shell interpretation of
-    that value entirely.
+#     `command` can be a string ("ls -la") or a list (["ls", "-la"]), a list
+#     is safer and preferred when any part of the command includes a variable
+#     (hostname, IP, filename, etc), since it avoids shell interpretation of
+#     that value entirely.
 
-    Returns a dict: {"stdout": str, "stderr": str, "returncode": int}
-    Raises RuntimeError if the command isn't found or times out.
-    """
-    load_dotenv('/home/david/coding/network-diagnostics/backend/.env.backend.dev')
-    password = os.getenv("ROUTER_SSH_PASSWORD")
-    client = paramiko.SSHClient()
+#     Returns a dict: {"stdout": str, "stderr": str, "returncode": int}
+#     Raises RuntimeError if the command isn't found or times out.
+#     """
+#     load_dotenv('/home/david/coding/network-diagnostics/backend/.env.backend.dev')
+#     password = os.getenv("ROUTER_SSH_PASSWORD")
+#     client = paramiko.SSHClient()
     
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    try:
-        client.connect(
-            hostname=host, 
-            username=username, 
-            password=password,
-            timeout=timeout
-        )
-        client.connect(host, username=username, password=password, timeout=timeout)
-        stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
-        output = stdout.read().decode()
-        error = stderr.read().decode()
-        return {
-            "stdout": output.strip(), 
-            "stderr": error.strip()
-        }
-    finally:
-        client.close()
-
-def lease_DHCP_time():
-    result = run_ssh_command("192.168.0.1", "admin", "cat /tmp/dhcp.leases")
-    stdout = result.get('stdout')
-    error = result.get('error')
+#     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+#     if not password:
+#         raise Exception(f"Need a password in order to run SSH on the router")
     
-    return {
-        "stdout": stdout,
-        "stderr": error,
-    }
+#     try:
+#         client.connect(
+#             hostname=host, 
+#             username=username, 
+#             password=password,
+#             timeout=timeout
+#         )
+#         client.connect(host, username=username, password=password, timeout=timeout)
+#         stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
+#         output = stdout.read().decode()
+#         error = stderr.read().decode()
+#         return {
+#             "stdout": output.strip(), 
+#             "stderr": error.strip()
+#         }
+#     finally:
+#         client.close()
+
+# def lease_DHCP_time():
+#     result = run_ssh_command("192.168.0.1", "admin", "cat /tmp/dhcp.leases")
+#     stdout = result.get('stdout')
+#     error = result.get('error')
+    
+#     return {
+#         "stdout": stdout,
+#         "stderr": error,
+#     }
 
 def guess_os_family(ip):
     reply = scapy.sr1(

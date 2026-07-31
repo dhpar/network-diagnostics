@@ -7,7 +7,7 @@ from datetime import datetime
 from flask.app import Flask
 from backend.mac_utils import get_net_mask
 from backend.traceroute import traceroute_host
-from backend.utils import net_config, lease_DHCP_time, ping_host
+from backend.utils import net_config, ping_host
 from backend.database import delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
 from backend.wifi import get_wifi_scan_from_windows
 from flask import request, jsonify, abort, Blueprint, request, current_app
@@ -124,13 +124,13 @@ def traceroute():
         
 @routes.route(devices_route)
 def get_devices():
-    lease_time = get_lease_time()
+    # lease_time = get_lease_time()
     rows = get_devices_with_label_db() 
     print(rows)
     devices = [dict(row) for row in rows]
     return jsonify({
         'devices': devices,
-        'lease_time': lease_time
+        # 'lease_time': lease_time
     })
 
 @routes.route(devices_update_route, methods=['PUT'])
@@ -166,10 +166,10 @@ def delete_device_label(mac):
 
     return jsonify({'mac': normalized_mac, 'deleted': True})
 
-@routes.route(devices_leasetime_route)
-def get_lease_time():
-    lease = lease_DHCP_time()
-    error = lease['stderr']
-    if(error is not None):
-        return error
-    return jsonify(lease['stdout'])
+# @routes.route(devices_leasetime_route)
+# def get_lease_time():
+#     lease = lease_DHCP_time()
+#     error = lease['stderr']
+#     if(error is not None):
+#         return error
+#     return jsonify(lease['stdout'])
