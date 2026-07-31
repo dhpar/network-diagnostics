@@ -13,17 +13,13 @@ def is_locally_administered_mac(mac):
     return bool(first_octet & 0b00000010)
 
 def get_net_mask2():
-    # List all available network interfaces
-    interfaces = netifaces.interfaces()
-    print("Interfaces:", interfaces)
-
-    # Get specific interface addresses
-    for iface in interfaces:
-        addrs = netifaces.ifaddresses(iface)
-        # Address Family 2 is typically AF_INET (IPv4)
-        if netifaces.AF_INET in addrs:
-            for ipv4 in addrs[netifaces.AF_INET]:
-                print(f"{iface} IPv4: {ipv4['addr']}")
+    iface = scapy.conf.iface
+    return {
+        "name": iface.name,
+        "description": iface.description,
+        "ip": iface.ip,
+        "mac": iface.mac,
+    }
                 
 def collect_candidates(local_ip, allow_host_routes):
     found = []
@@ -51,14 +47,14 @@ def get_net_mask():
     from backend.utils import net_config
 
     candidates = collect_candidates(net_config.local_ip, allow_host_routes=False)
-    get_net_mask2()
+    iface = get_net_mask2()
+    print(dir(net_config.iface))
     if not candidates:
         # Nothing but /32 and multicast entries matched, likely a VPN tunnel
         candidates = collect_candidates(net_config.local_ip, allow_host_routes=True)
         return None
 
     _, msk = min(candidates, key=lambda pair: bin(pair[1]).count('1'))
-    
     return bin(msk).count('1')
 
 def mac_lookup_vendor(mac):

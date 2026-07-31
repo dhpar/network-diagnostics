@@ -22,6 +22,7 @@ class net_config:
     local_ifaces: list[str] = field(default_factory = scapy.conf.ifaces)
     local_ip: str = scapy.conf.route.route(scapy.conf.iface.ip)[1]
     gateway_ip: str = scapy.conf.route.route("8.8.8.8")
+    iface: str = scapy.conf.iface
 
 def get_gateway():
     try:
@@ -117,7 +118,7 @@ def scan_network():
             'status': 'online'
         }
         for _, received in answered
-        if hasattr(received, 'psrc') and hasattr(received, 'hwsrc')
+            if hasattr(received, 'psrc') and hasattr(received, 'hwsrc')
     ]
 
 def reverse_lookup(ip):

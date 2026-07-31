@@ -1,23 +1,12 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
-            "type": "dockerfile",
-            "request": "launch",
-            "name": "Docker: Build",
-            "dockerfile": "Dockerfile",
-            "contextPath": "${workspaceFolder}"
-        },
        {
             "name": "Python Debugger: Flask",
             "type": "debugpy",
             "request": "launch",
             "module": "flask",
-            "python": "${workspaceFolder}/backend/venv/bin/python",
-            // "preLaunchTask": "ensure-venv",
+            "console": "internalConsole",
             "env": {
                 "FLASK_APP": "backend/app.py",
                 "FLASK_DEBUG": "1"
@@ -25,11 +14,10 @@
             "args": [
                 "run",
                 "--no-debugger",
-                // "--no-reload"
+                "--no-reload"
             ],
             "jinja": true,
-            "autoStartBrowser": false,
-            "sudo": true
+            "justMyCode": true
         },
         {
             "type": "chrome",
@@ -37,14 +25,9 @@
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/frontend",
-            "preLaunchTask": "npm: dev - frontend",
+            "preLaunchTask": "vite: dev",
             "skipFiles": [ "${workspaceFolder}/node_modules/**/*.js" ],
         },
     ],
-    "compounds": [
-        {
-        "name": "Server + Client",
-        "configurations": ["Python Debugger: Flask", "Launch Chrome against localhost"]
-        }
-    ]
+   
 }

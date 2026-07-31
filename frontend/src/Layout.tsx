@@ -21,7 +21,7 @@ export default function Layout({
         setConnected(navigator.onLine);
         setLastUpdate(new Date());
   }, [navigator.onLine]);
-  
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       <header className="bg-gray-800 border-b border-gray-700 shadow-lg px-8">
@@ -49,16 +49,19 @@ export default function Layout({
       </header>
       <main className="grid grid-cols-5 gap-4 my-4 mx-8">
         <div className="col-span-4 col-start-2 flex w-full">
-          {title? <h2 className="flex-1 justify-between text-2xl font-bold">{title}</h2> : null}
-          
-          {isRefreshLoading &&  refetch? <button
-        onClick={(e) => handleRefetchButton(e, refetch)}
-        disabled={isRefreshLoading}
-        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-    >
-        <RefreshCw className={`w-4 h-4 ${isRefreshLoading ? 'animate-spin' : ''}`} />
-        <span>Refresh</span>
-    </button> : null}
+          {title? 
+            <h2 className="flex-1 justify-between text-2xl font-bold">{title}</h2> : 
+            null}
+    
+      {isRefreshLoading && refetch? 
+        <button
+          onClick={(e) => handleRefetchButton(e, refetch)}
+          disabled={isRefreshLoading}
+          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+        >
+            <RefreshCw className={`w-4 h-4 ${isRefreshLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button> : null}
         </div>
         <aside className="row-start-2">
           <Card>

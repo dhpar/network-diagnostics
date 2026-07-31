@@ -84,45 +84,45 @@ transition.
 
 ---
 
-### Phase 2: Move the repository to a native Windows filesystem
+~~### Phase 2: Move the repository to a native Windows filesystem~~
 
-#### Step 4: Clone or copy the repo onto the Windows filesystem
+~~#### Step 4: Clone or copy the repo onto the Windows filesystem~~
 
-**What is needed:**
+~~**What is needed:**~~
 
-- Clone the repository into a Windows-native path such as
-  `C:\dev\network-diagnostics`
-- Avoid working from a WSL-mounted path or a UNC path if possible
+~~- Clone the repository into a Windows-native path such as~~
+  ~~`C:\dev\network-diagnostics`~~
+~~- Avoid working from a WSL-mounted path or a UNC path if possible~~
 
-**Why:**
+~~**Why:**~~
 
-- Native Windows tools behave more reliably when the project lives on a
-  normal Windows drive.
-- This avoids path translation issues that can appear when Python, Node, and
-  VS Code interact with WSL-mounted files.
-- It also makes future debugging and packaging easier. 
+~~- Native Windows tools behave more reliably when the project lives on a~~
+~~  normal Windows drive.~~
+~~- This avoids path translation issues that can appear when Python, Node, and~~
+~~  VS Code interact with WSL-mounted files.~~
+~~- It also makes future debugging and packaging easier.~~ 
 
-#### Step 5: Create a Windows virtual environment
+~~#### Step 5: Create a Windows virtual environment~~
 
-**What is needed:**
+~~**What is needed:**~~
 
-- Create a virtual environment inside the backend folder, for example
-  `backend\venv`
-- Activate it in PowerShell
-- Install the backend requirements with `pip install -r requirements.txt`
+~~- Create a virtual environment inside the backend folder, for example~~
+~~  `backend\venv`~~
+~~- Activate it in PowerShell~~
+~~- Install the backend requirements with `pip install -r requirements.txt`~~
 
-**Why:**
+~~**Why:**~~
 
-- The backend should have an isolated environment that matches the native
-  Windows setup.
-- This ensures that dependency resolution is not affected by the WSL
-  environment.
-- It also makes it easier to reproduce later issues if the environment
-  changes.
+~~- The backend should have an isolated environment that matches the native~~
+~~  Windows setup.~~
+~~- This ensures that dependency resolution is not affected by the WSL~~
+~~  environment.~~
+~~- It also makes it easier to reproduce later issues if the environment~~
+~~  changes.~~
 
----
+~~ --- ~~
 
-### Phase 3: Rework the backend for Windows-native execution
+~~ ### Phase 3: Rework the backend for Windows-native execution ~~
 
 #### Step 6: Remove the WSL-to-Windows bridge from the backend
 

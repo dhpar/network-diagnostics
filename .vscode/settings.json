@@ -8,5 +8,8 @@
   },
   "python.analysis.extraPaths": [
     "./backend/.venv/lib/python3.12/site-packages"
-  ]
+  ],
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "python-envs.defaultEnvManager": "ms-python.python:venv",
+  "python.terminal.useEnvFile": true
 }
