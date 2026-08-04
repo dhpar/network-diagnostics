@@ -1,6 +1,4 @@
 import scapy.all as scapy
-import netifaces
-
 
 def is_locally_administered_mac(mac):
     """

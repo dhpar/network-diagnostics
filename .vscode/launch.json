@@ -27,6 +27,11 @@
             "webRoot": "${workspaceFolder}/frontend",
             "preLaunchTask": "vite: dev",
             "skipFiles": [ "${workspaceFolder}/node_modules/**/*.js" ],
+            "serverReadyAction": {
+				"action": "openExternally",
+				"pattern": "http://localhost:([0-9]+)",
+				"uriFormat": "http://localhost:%s"
+			}
         },
     ],
    

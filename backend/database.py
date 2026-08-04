@@ -1,15 +1,15 @@
 from datetime import datetime
 import os
 import sqlite3;
-from typing import TypedDict
+from typing import List, TypedDict
 
 class Device(TypedDict):
-    id: int | None
-    mac: str
-    ip: str
+    
+    mac: str | None
+    ip: str | None
     hostname: str | None
     vendor: str | None
-    last_seen: datetime
+    last_seen: str
     status: str | None
     vendor: str | None
     random_mac: bool | None
@@ -74,33 +74,33 @@ def init_db():
 
         conn.commit()
     
-def insert_or_replace_device_db(device:Device, resolved_hostname, now, random_mac):
-    with sqlite3.connect(DB_PATH) as conn:
-        c = conn.cursor()
+def insert_or_replace_device_db(devices:List[Device]):
+    rows = []
+    for device in devices:
         ip = device.get('ip') or 'Unknown'
         mac = device.get('mac') or 'Unknown'
         vendor = device.get('vendor') or 'Unknown'
-        hostname = device.get('hostname') or resolved_hostname or 'Unknown'
+        hostname = device.get('hostname') or 'Unknown'
         random_mac = bool(device.get('random_mac'))
+        last_seen = device.get('last_seen') or 'Unknown'
         
-        c.execute('''
+        rows.append((mac, random_mac, ip, hostname, 'online', vendor, last_seen))
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.executemany('''
             INSERT INTO 
-                devices (
-                    mac, random_mac, ip, hostname, status, vendor, last_seen)
+                devices (mac, random_mac, ip, hostname, status, vendor, last_seen)
             VALUES 
                 (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(mac) DO UPDATE SET
-                ip = CASE WHEN ip IS NOT excluded.ip THEN excluded.ip ELSE ip END,
-                random_mac = CASE WHEN random_mac IS NOT excluded.random_mac THEN excluded.random_mac ELSE random_mac END,
-                hostname = CASE WHEN hostname IS NOT excluded.hostname THEN excluded.hostname ELSE hostname END,
-                status = CASE WHEN status IS NOT excluded.status THEN excluded.status ELSE status END,
-                vendor = CASE WHEN vendor IS NOT excluded.vendor THEN excluded.vendor ELSE vendor END,
+                ip = excluded.ip,
+                hostname = excluded.hostname,
+                vendor = excluded.vendor,
                 last_seen = excluded.last_seen
             ''', 
-            (
-                mac, random_mac, ip, hostname, 'online', vendor, now
-            )
+            rows
         )
+        conn.commit()
     
 def get_devices_with_label_db() -> list[Device]:
     with sqlite3.connect(DB_PATH) as conn:
