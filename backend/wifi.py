@@ -52,7 +52,7 @@ def get_wifi_signal_quality() -> Optional[Dict[str, Any]]:
                     signal_quality_percent = None
             interference_level = detect_interference(channel)
         # Get more detailed info
-        signal_strength_dbm = get_signal_strength_dbm()
+        signal_strength_dbm = get_signal_strength_dbm(signal_quality_percent)
         snr = estimate_snr(signal_strength_dbm)
         return {
             'signal_quality_percent': signal_quality_percent,
@@ -84,30 +84,23 @@ def parse_netsh_output(output: str) -> Dict[str, str]:
             data[key] = value
     return data
 
-def get_signal_strength_dbm() -> Optional[int]:
+def get_signal_strength_dbm(signal_quality) -> Optional[int]:
     """
     Get signal strength in dBm (more accurate than percentage).
     Uses WMI on Windows.
     """
-    try:
-        result = subprocess.run(
-            [
-                'powershell', 
-                '-Command', 
-                'Get-NetAdapter -Physical | Where-Object {$_.InterfaceDescription -match "Wireless|WiFi"} | '
-                'Get-NetAdapterStatistics | Select-Object -ExpandProperty ReceivedSignalStrength'
-            ],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        
-        if result.stdout.strip():
-            return int(result.stdout.strip())
-    except Exception as e:
-        logger.debug(f"Could not get signal strength via PowerShell: {e}")
-    
-    return None
+    # Convert quality % to dBm (100% = -30 dBm, 0% = -100 dBm)
+    signal_strength_dbm = None
+    if signal_quality:
+        try:
+            quality_percent = int(signal_quality)
+            signal_strength_dbm = int(-100 + (quality_percent * 0.7))
+            return signal_strength_dbm
+        except (ValueError, AttributeError):
+            pass
+        return None
+    else:
+        return None
 
 def estimate_snr(signal_dbm: Optional[int]) -> Optional[int]:
     """
