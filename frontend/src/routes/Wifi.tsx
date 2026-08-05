@@ -5,6 +5,7 @@ import ROUTES from '../routes';
 import { Wifi as WifiIcon, WifiOff as WifiOffIcon, Signal } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import Layout from "../Layout";
+import { useState, type ChangeEventHandler } from "react";
 
 export const Route = createFileRoute('/Wifi')({
   component: Wifi,
@@ -12,10 +13,13 @@ export const Route = createFileRoute('/Wifi')({
 
 function Wifi() {
     const wifiScanRequest = getResource(ROUTES.SCAN_WIFI);
+    const [refetchInterval, setRefetchInterval] = useState("30");
     const { data, refetch, isLoading, isRefetching, isError, error } = useQuery({
         queryKey: ['Wifi scan'],
         queryFn: () => fetchResource<TWifiScan>(wifiScanRequest),
+        refetchInterval: parseInt(refetchInterval)*1000
     });
+    const handleChangeRefetch:ChangeEventHandler<HTMLInputElement> = (e) => setRefetchInterval(e.currentTarget.value);
 
     const signalColor = (quality: number | undefined) => {
         if (quality === undefined) return 'text-gray-500';
@@ -36,6 +40,12 @@ function Wifi() {
 
     return (
         <Layout title='WiFi Status' isRefreshLoading={isLoading} refetch={refetch} isRefetching={isRefetching}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid-span-4">
+                    <label htmlFor='refetchInterval'>Refetch Interval</label>
+                    <input type='number' id="refetchInterval" name="refetchInterval" onChange={handleChangeRefetch} placeholder={`${refetchInterval}`} className="bg-gray-300 flex border-gray-700 text-gray-800 p-2 mb-4" />
+                </div>
+            </div>
             <div className="space-y-6">
                 {isError && (
                     <div className="bg-gray-800 rounded-lg p-12 border border-gray-700 text-center">
@@ -56,6 +66,7 @@ function Wifi() {
                                 </div>
                                 <p className={`font-mono text-2xl ${signalColor(data.signal_quality_percent)}`}>
                                     {data.signal_quality_percent !== undefined ? `${data.signal_quality_percent}%` : 'N/A'}
+                                    
                                 </p>
                             </div>
                             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -114,8 +125,12 @@ function Wifi() {
                                 <table className="w-full divide-y divide-gray-700">
                                     <thead className="bg-gray-700">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Interface</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Value</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                                Interface
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                                Value
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-700">
