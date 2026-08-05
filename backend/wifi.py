@@ -1,49 +1,209 @@
 import subprocess
-import json
-from scapy.all import sniff, conf  
-from scapy.layers.dot11 import Dot11
+from venv import logger
+import subprocess
+from typing import Optional, Dict, Any
 
-conf.use_pcap=True
-
-def get_wifi_scan_from_windows():
-    """
-    Shells out to a native Windows Python process to get real WiFi signal
-    data, since WSL2 has no driver-level access to the wireless radio.
-    """
-    script_path_wsl = "/home/david/coding/network-diagnostics/backend/windows/wifi_scan.py"
-
-    # python.exe can't understand /mnt/c/... paths, convert to C:\... first
-    converted = subprocess.run(
-        ["wslpath", "-w", script_path_wsl],
-        capture_output=True, text=True, check=True
+def get_interface_data():
+    result = subprocess.run(
+        ['netsh', 'wlan', 'show', 'interface'],
+        capture_output=True,
+        text=True,
+        check=True
     )
-    windows_script_path = converted.stdout.strip().replace('/', '\\')
+    
+    interface_data = parse_netsh_output(result.stdout)
+    if not interface_data:
+        return None
+    
+    return {
+        'name': interface_data.get('Name') or None,
+        'description': interface_data.get('Description') or None,
+        'physical_address': interface_data['Physical address'],
+        'state': interface_data.get('State') or None,
+        'SSDI': interface_data.get('SSID') or None,
+        'band': interface_data.get('Band') or None,
+        'channel': interface_data.get('Channel') or None,
+        'radio_type': interface_data.get('Radio type') or None,
+        'authentication': interface_data.get('Authentication') or None,
+        'cipher': interface_data.get('Cipher') or None,
+        'recieve_rate_mbps': interface_data['Receive rate (Mbps)'] or None,
+        'transmit_rate_mbps': interface_data['Transmit rate (Mbps)'] or None,
+        'signal': interface_data.get('Signal')   
+    }
+            
+def get_wifi_signal_quality() -> Optional[Dict[str, Any]]:
+    """
+    Get detailed WiFi signal quality info on Windows.
+    Returns signal strength, SNR, channel, interference, etc.
+    """
+    try:
+        # Get current connected network info
+        interface = get_interface_data()
+        channel = None
+        signal_quality_percent = None
+        interference_level = "unknown"
+        if interface:
+            channel = interface.get('channel')
+            signal_str = interface.get('signal')
+            if signal_str and isinstance(signal_str, str) and signal_str.endswith('%'):
+                try:
+                    signal_quality_percent = int(signal_str.rstrip('%'))
+                except ValueError:
+                    signal_quality_percent = None
+            interference_level = detect_interference(channel)
+        # Get more detailed info
+        signal_strength_dbm = get_signal_strength_dbm()
+        snr = estimate_snr(signal_strength_dbm)
+        return {
+            'signal_quality_percent': signal_quality_percent,
+            'signal_strength_dbm': signal_strength_dbm,
+            'snr_db': snr,
+            'channel': int(channel) if channel else None,
+            'frequency_ghz': get_frequency_from_channel(channel),
+            'interference_level': interference_level,
+            'recommendation': get_signal_recommendation(signal_quality_percent, snr) if signal_quality_percent is not None else None,
+            'status': 'connected',
+            'interface': interface
+        }
+    
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to get WiFi signal quality: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error getting WiFi quality: {e}")
+        return None
 
-    proc = subprocess.run(
-        ["python.exe", windows_script_path],
-        capture_output=True, text=True, timeout=15
-    )
+def parse_netsh_output(output: str) -> Dict[str, str]:
+    """Parse netsh wlan show interface output"""
+    data = {}
+    for line in output.split('\n'):
+        if ':' in line:
+            key, value = line.split(':', 1)
+            key = key.strip()
+            value = value.strip()
+            data[key] = value
+    return data
 
-    if proc.returncode != 0:
-        raise RuntimeError(f"Windows wifi scan failed: {proc.stderr}")
+def get_signal_strength_dbm() -> Optional[int]:
+    """
+    Get signal strength in dBm (more accurate than percentage).
+    Uses WMI on Windows.
+    """
+    try:
+        result = subprocess.run(
+            [
+                'powershell', 
+                '-Command', 
+                'Get-NetAdapter -Physical | Where-Object {$_.InterfaceDescription -match "Wireless|WiFi"} | '
+                'Get-NetAdapterStatistics | Select-Object -ExpandProperty ReceivedSignalStrength'
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if result.stdout.strip():
+            return int(result.stdout.strip())
+    except Exception as e:
+        logger.debug(f"Could not get signal strength via PowerShell: {e}")
+    
+    return None
 
-    return json.loads(proc.stdout)
+def estimate_snr(signal_dbm: Optional[int]) -> Optional[int]:
+    """
+    Estimate SNR from signal strength.
+    Typical noise floor is around -90 to -95 dBm on WiFi.
+    SNR = Signal - Noise
+    """
+    if not signal_dbm:
+        return None
+    
+    # Typical WiFi noise floor
+    noise_floor = -92
+    snr = signal_dbm - noise_floor
+    return max(0, snr)  # SNR shouldn't be negative
 
+def get_frequency_from_channel(channel: Optional[str]) -> Optional[float]:
+    """Convert WiFi channel to frequency in GHz"""
+    if not channel:
+        return None
+    
+    try:
+        ch = int(channel)
+        # 2.4 GHz band: channels 1-13
+        if 1 <= ch <= 13:
+            return 2.4 + (ch - 1) * 0.005
+        # 5 GHz band: channels 36-165
+        elif 36 <= ch <= 165:
+            return 5.0 + (ch - 36) * 0.005
+    except (ValueError, TypeError):
+        pass
+    
+    return None
 
-def iface():
-    ifaces = conf.ifaces
-    wifi_iface = [i for i in ifaces if "eth4" in i][0] # Example: finds first wireless interface
-    return wifi_iface.data['eth4'].ip
+def detect_interference(channel: Optional[str]) -> str:
+    """
+    Detect potential interference on the channel.
+    This is simplified - in reality you'd scan for other networks.
+    """
+    if not channel:
+        return "unknown"
+    
+    try:
+        result = subprocess.run(
+            ['netsh', 'wlan', 'show', 'networks', 'mode=Bssid'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        # Count networks on same channel
+        networks_on_channel = count_networks_on_channel(result.stdout, channel)
+        
+        if networks_on_channel > 3:
+            return "high"
+        elif networks_on_channel > 1:
+            return "medium"
+        else:
+            return "low"
+    
+    except Exception as e:
+        logger.debug(f"Could not detect interference: {e}")
+        return "unknown"
 
+def count_networks_on_channel(netsh_output: str, target_channel: str) -> int:
+    """Parse netsh output to count networks on the same channel"""
+    count = 0
+    current_channel = None
+    
+    for line in netsh_output.split('\n'):
+        if 'Channel' in line and ':' in line:
+            try:
+                _, ch = line.split(':')
+                current_channel = ch.strip()
+            except ValueError:
+                pass
+        
+        if current_channel == target_channel:
+            count += 1
+    
+    return count
 
-def callBack(pkg): 
-    conf.iface.setmonitor(True)
-    if pkg.haslayer(Dot11) and pkg.type == 0 and pkg.subtype == 8:
-            print("dBm_AntSignal", pkg.dBm_AntSignal)
-            print("dBm_AntNoise", pkg.dBm_AntNoise)
+def get_signal_recommendation(signal_quality: Optional[int], snr: Optional[int]) -> str:
+    """Get actionable recommendation based on signal metrics"""
+    if signal_quality is None or snr is None:
+        return "Unable to assess - insufficient data"
 
-if __name__ == "__main__":
-    # Only runs the old monitor-mode sniff if this file is executed directly,
-    # not when imported (e.g. by routes.py for get_wifi_scan_from_windows)
-    sniff(iface=iface, prn=callBack)
+    quality = signal_quality
+    
+    if quality >= 80 and snr >= 30:
+        return "Excellent signal - no action needed"
+    elif quality >= 60 and snr >= 20:
+        return "Good signal - acceptable performance"
+    elif quality >= 40 and snr >= 10:
+        return "Fair signal - consider moving closer or repositioning router"
+    elif quality >= 20:
+        return "Poor signal - move closer to router or reduce interference"
+    else:
+        return "Very poor signal - connection may be unstable"
     

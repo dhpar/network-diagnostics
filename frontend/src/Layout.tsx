@@ -3,19 +3,16 @@ import { Network, Clock, RefreshCw } from "lucide-react"
 import { useEffect, useState, type ReactNode, type MouseEvent } from "react";
 import Card from "./components/Layout/Card/Card";
 import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
-import type { TDevices } from "./App.types";
 
-type refetchFunction = (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<NoInfer<TDevices>, Error>>;
-
-export default function Layout({
-  children, title, isRefreshLoading, refetch
-}: { children: ReactNode, title?: string, isRefreshLoading?:boolean, refetch?:refetchFunction }) {
+export default function Layout<T>({
+  children, title, isRefreshLoading, refetch, isRefetching
+}: { children: ReactNode, title?: string, isRefreshLoading?:boolean, refetch?: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<NoInfer<T>, Error>>, isRefetching?:boolean }) {
   const [connected, setConnected] = useState<boolean>(false);
   const [lastUpdate, setLastUpdate] = useState<Date>();
-  const handleRefetchButton = (event:MouseEvent<HTMLButtonElement>, reGet:refetchFunction) => {
+  const handleRefetchButton = (event:MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    reGet();
-    console.log('test');
+    refetch && refetch();
+    console.log('Refetching');
   }
   useEffect(() => {
         setConnected(navigator.onLine);
@@ -53,13 +50,13 @@ export default function Layout({
             <h2 className="flex-1 justify-between text-2xl font-bold">{title}</h2> : 
             null}
     
-      {isRefreshLoading && refetch? 
+      {refetch? 
         <button
-          onClick={(e) => handleRefetchButton(e, refetch)}
-          disabled={isRefreshLoading}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+          onClick={handleRefetchButton}
+          disabled={isRefreshLoading || isRefetching }
+          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-4 py-2 rounded-lg transition-colors"
         >
-            <RefreshCw className={`w-4 h-4 ${isRefreshLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isRefreshLoading || isRefetching ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button> : null}
         </div>
@@ -77,6 +74,9 @@ export default function Layout({
                 </Link>
                 <Link to="/Traceroute" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
                   Traceroute
+                </Link>
+                <Link to="/Wifi" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
+                  WiFi
                 </Link>
             </nav>
           </Card>

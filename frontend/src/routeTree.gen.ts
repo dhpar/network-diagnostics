@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WifiRouteImport } from './routes/Wifi'
 import { Route as TracerouteRouteImport } from './routes/Traceroute'
 import { Route as DevicesRouteImport } from './routes/Devices'
 import { Route as DNSRouteImport } from './routes/DNS'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WifiRoute = WifiRouteImport.update({
+  id: '/Wifi',
+  path: '/Wifi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TracerouteRoute = TracerouteRouteImport.update({
   id: '/Traceroute',
   path: '/Traceroute',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/DNS': typeof DNSRoute
   '/Devices': typeof DevicesRoute
   '/Traceroute': typeof TracerouteRoute
+  '/Wifi': typeof WifiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/DNS': typeof DNSRoute
   '/Devices': typeof DevicesRoute
   '/Traceroute': typeof TracerouteRoute
+  '/Wifi': typeof WifiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/DNS': typeof DNSRoute
   '/Devices': typeof DevicesRoute
   '/Traceroute': typeof TracerouteRoute
+  '/Wifi': typeof WifiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/DNS' | '/Devices' | '/Traceroute'
+  fullPaths: '/' | '/DNS' | '/Devices' | '/Traceroute' | '/Wifi'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/DNS' | '/Devices' | '/Traceroute'
-  id: '__root__' | '/' | '/DNS' | '/Devices' | '/Traceroute'
+  to: '/' | '/DNS' | '/Devices' | '/Traceroute' | '/Wifi'
+  id: '__root__' | '/' | '/DNS' | '/Devices' | '/Traceroute' | '/Wifi'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   DNSRoute: typeof DNSRoute
   DevicesRoute: typeof DevicesRoute
   TracerouteRoute: typeof TracerouteRoute
+  WifiRoute: typeof WifiRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/Wifi': {
+      id: '/Wifi'
+      path: '/Wifi'
+      fullPath: '/Wifi'
+      preLoaderRoute: typeof WifiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/Traceroute': {
       id: '/Traceroute'
       path: '/Traceroute'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   DNSRoute: DNSRoute,
   DevicesRoute: DevicesRoute,
   TracerouteRoute: TracerouteRoute,
+  WifiRoute: WifiRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,15 +1,13 @@
 from ipaddress import ip_address
-import re
+import logging
 import time
 from dotenv import load_dotenv
 from datetime import datetime
-
-from flask.app import Flask
 from backend.mac_utils import get_net_mask
 from backend.traceroute import traceroute_host
-from backend.utils import net_config, ping_host
-from backend.database import delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
-from backend.wifi import get_wifi_scan_from_windows
+from backend.utils import get_hostname, net_config, ping_host
+from backend.database import Device, delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
+from backend.wifi import get_wifi_signal_quality
 from flask import request, jsonify, abort, Blueprint, request, current_app
 import socket
 
@@ -90,15 +88,8 @@ def dns_test():
 def wifi_scan():
     """Scan for nearby WiFi networks via native Windows Python (WSL has no radio access)"""
     try:
-        networks = get_wifi_scan_from_windows()
-        return jsonify({
-            'networks': networks if networks else [], 
-            'count': len(networks) if networks else 0
-        })
-    except WifiScannerUnavailable as e:
-        return jsonify({'error': 'WiFi scan script unavailable.'}), 503
-    except WifiScanTimeout as e:
-        return jsonify({'error': 'WiFi scan timedout, waiting for answer for too long.'}), 503
+        wifi_quality = get_wifi_signal_quality()
+        return jsonify(wifi_quality)
     except Exception as e:
         print(f"WiFi scan error: {e}")
         return jsonify({'error': 'WiFi scanning requires a native Windows Python with pywifi installed'}), 500
@@ -125,9 +116,23 @@ def traceroute():
 @routes.route(devices_route)
 def get_devices():
     # lease_time = get_lease_time()
-    rows = get_devices_with_label_db() 
-    print(rows)
-    devices = [dict(row) for row in rows]
+    rows:list[Device] = get_devices_with_label_db()
+    devices = []
+    for row in rows:
+        # ip = row['ip']
+        # Try to get the hostname (might be None if still processing)
+        # hostname = get_hostname(ip)
+        hostname = get_hostname(row['ip'])
+        if hostname is not None:
+            device = dict(row) | {
+                'hostname': hostname
+            }
+        else:
+            device = dict(row)
+        devices.append(device)
+    
+    logging.info(devices)
+    
     return jsonify({
         'devices': devices,
         # 'lease_time': lease_time
@@ -157,7 +162,6 @@ def delete_device_label(mac):
     data = request.get_json(silent=True) or {}
     label = data.get('label', '').strip()
     normalized_mac = mac.strip().upper()
-    
 
     deleted = delete_label_db(normalized_mac, label)
 

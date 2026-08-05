@@ -13,9 +13,12 @@ from subprocess import run
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from scapy.sendrecv import srp
-from backend.database import Device, insert_or_replace_device_db
+from backend.database import Device, insert_or_replace_device_db, update_device_hostname
 from backend.mac_utils import is_locally_administered_mac, mac_lookup_vendor
 from dataclasses import dataclass, field
+
+executor = ThreadPoolExecutor(max_workers=3)
+lookup_futures = {}
 
 class LookupError(Exception):
     """Raised when there was an error looking up an ip"""
@@ -108,26 +111,75 @@ def scan_network():
         iface=net_config.local_iface,
         verbose=0,
     )
-    print(answered.summary(lambda s,r: r.sprintf("%Ether.src% %ARP.psrc%") ))
+    # print(answered.summary(lambda s,r: r.sprintf("%Ether.src% %ARP.psrc%") ))
     devices = [[ receive.psrc, receive.src ] for  _, receive in answered]
     return devices
 
-def reverse_lookup(ip):
+def get_hostname(ip) -> str | None:
+    """Get hostname if ready, None if still processing"""
+    if ip in lookup_futures:
+        future = lookup_futures[ip]
+        if future.done():
+            try:
+                hostname_result = future.result(timeout=0)
+                update_device_hostname(ip, hostname_result)
+                return hostname_result
+            except Exception as e:
+                logger.error(f"Reverse lookup failed for {ip}: {e}")
+                return None
+    return None
+
+def queue_reverse_lookup(ip):
+    """Submit reverse lookup to thread pool"""
     try:
-        # Returns a tuple: (hostname, aliaslist, ipaddrlist)
-        hostname, _, _ = socket.gethostbyaddr(ip)[0]
-        logger.info(f"reverse_lookup: Reverse DNS record for {ip}, return {hostname}")
-        return hostname
-    except socket.herror:
-        # Fallback if reverse DNS record is missing
-        logger.warning(f"reverse_lookup: Reverse DNS record is missing for {ip} ([Errno 11004] host not found), returned None")
-        return None
-    except ValueError:
-        logger.warning(f"reverse_lookup: Invalid IP address format for {ip}, returned None")
-        return None
+        if ip not in lookup_futures:
+            future = executor.submit(reverse_lookup, ip)
+            lookup_futures[ip] = future
+            
+            # Add a callback to update DB when done
+            future.add_done_callback(lambda f: on_lookup_complete(ip, f))
+    except Exception as e:
+        logger.error(f"Error while queuing the reverse lookup")
+        
+def on_lookup_complete(ip, future):
+    """Called when reverse lookup finishes"""
+    try:
+        hostname = future.result()
+        if hostname:
+            update_device_hostname(ip, hostname)
+            logger.info(f"Updated {ip} with hostname: {hostname}")
+    except Exception as e:
+        logger.error(f"Reverse lookup failed for {ip}: {e}")
+        
+def reverse_lookup(ip):
+    """Try multiple methods to get hostname
+    Note: this function is runned in a different threat to improve performance, this lookups can take time and otherwise the main thread might get block for the duration of it.
+    """
+    hostname = None
     
-# This function is not yet implemented, nor called anywhere, but should check if a device that has an assigned IP is answering or not answering (not necessarly offline).
+    try:
+        # Method 1: Reverse DNS
+        hostname, _, _ = socket.gethostbyaddr(ip)
+        logger.info(f"reverse_lookup: Got hostname via DNS: {hostname}")
+    except (socket.herror, ValueError):
+        pass
+    
+    try:
+        # Method 2: Try /etc/hosts or Windows hosts file
+        hostname = socket.getfqdn(ip)
+        if hostname != ip:  # Only return if it resolved to something different
+            logger.info(f"reverse_lookup: Got hostname via FQDN: {hostname}")
+    except Exception:
+        pass
+    
+    # Method 3: Check router's DHCP leases (if you can SSH into it)
+    # This is what you mentioned earlier with Paramiko
+    
+    logger.warning(f"reverse_lookup: No hostname found for {ip}")
+    return hostname if hostname != ip else None
+    
 def is_device_online(ip_address):
+    # This function is not yet implemented, nor called anywhere, but should check if a device that has an assigned IP is answering or not answering (not necessarly offline).
     # Create an ARP packet asking "who has the IP?"
     arp_request = ARP(pdst=ip_address)
     # Broadcast the request over Layer 2 (Ethernet)
@@ -155,32 +207,33 @@ def update_scan_results():
         devices:List[Device] = []
         if answered_devices:
             workers = min(8, len(answered_devices))
-            with ThreadPoolExecutor(max_workers=workers) as executor:
-                for ip, mac in answered_devices:               
-                    if ip is not None and mac is not None:
-                        # TODO: We should decouple the reverse lookup for the hostname and do it separetly from the main scan, otherwise it holdsup the whole scan (takes forever). 
-                        hostname = executor.submit(reverse_lookup, ip).result()
-                        vendor = mac_lookup_vendor(mac)
-                        random_mac = is_locally_administered_mac(mac)
-                        now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-                
-                        devices.append({
-                            "hostname": hostname or 'Unknown',
-                            "mac": mac or 'Unknown',
-                            "ip": ip or 'Unknown',
-                            "vendor": vendor or 'Unknown',
-                            "last_seen": now,
-                            "status": "online",
-                            "random_mac": random_mac or None,
-                        })
-                    else:
-                        continue
-                insert_or_replace_device_db(devices)
+            # with ThreadPoolExecutor(max_workers=workers) as executor:
+            for ip, mac in answered_devices:               
+                if ip is not None and mac is not None:
+                    # TODO: We should decouple the reverse lookup for the hostname and do it separetly from the main scan, otherwise it holdsup the whole scan (takes forever). 
+                    queue_reverse_lookup(ip)
+                    hostname = None
+                    vendor = mac_lookup_vendor(mac)
+                    random_mac = is_locally_administered_mac(mac)
+                    now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
+            
+                    devices.append({
+                        "hostname": hostname or 'Unknown',
+                        "mac": mac or 'Unknown',
+                        "ip": ip or 'Unknown',
+                        "vendor": vendor or 'Unknown',
+                        "last_seen": now,
+                        "status": "online",
+                        "random_mac": random_mac or None,
+                    })
+                else:
+                    continue
+            insert_or_replace_device_db(devices)
     except Exception as e:
         logger.error(f"Background scan error: {e}")
         
-# Background network scanning
 def background_scan() -> List[Device]:
+    # Background network scanning
     while True:
         update_scan_results()
         time.sleep(10)
@@ -249,3 +302,4 @@ def guess_os_family(ip):
         return "Windows"
     else:
         return "Network device (router/switch)"
+    

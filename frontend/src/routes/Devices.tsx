@@ -33,14 +33,16 @@ function Devices () {
     })
 
     const devicesRequest = getResource(ROUTES.DEVICES);
-    const {data , refetch, isLoading } = useQuery({ 
+    const {data , refetch, isLoading, isRefetching } = useQuery({ 
         queryKey: ['devices'], 
-        queryFn: () => fetchResource<TDevices>(devicesRequest)
+        queryFn: () => fetchResource<TDevices>(devicesRequest),
+        // Refetch once every 30 seconds
+        refetchInterval: 30000, 
     });
     
     return (
     <>
-        <Layout title='Network Devices' isRefreshLoading={isLoading} refetch={refetch}>
+        <Layout title='Network Devices' isRefreshLoading={isLoading} refetch={refetch} isRefetching={isRefetching}>
             <form onSubmit={(event) => {
                     event.preventDefault()
                     event.stopPropagation()
@@ -73,7 +75,9 @@ function Devices () {
                                         <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-400">
                                             <EditDevice device={device} />
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-300"><p>{device.hostname || 'Unknown'}</p> {device.vendor && <p>( {device.vendor} )</p>}</td>
+                                        {device.hostname !== 'Unknown'?
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-300"><p>{device.hostname}</p> {device.vendor && <p>( {device.vendor} )</p>}</td> :
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-300"><p className='font-mono text-sm text-gray-400'>{'Unknown'}</p> {device.vendor && <p>( {device.vendor} )</p>}</td>}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                                             {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'N/A'}
                                         </td>

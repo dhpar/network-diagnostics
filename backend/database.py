@@ -152,3 +152,14 @@ def delete_label_db(normalized_mac, label):
         
         return deleted
     
+def update_device_hostname(ip, hostname):
+    """Update a single device's hostname in DB"""
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute('''
+            UPDATE devices 
+            SET hostname = ?
+            WHERE ip = ?
+        ''', (hostname, ip))
+        conn.commit()
+        

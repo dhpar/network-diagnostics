@@ -49,6 +49,35 @@ export interface IWifiNetwork {
 }
 
 export type TWifiNetworks = IWifiNetwork[];
+
+export interface IWifiInterface {
+  name?: string;
+  description?: string;
+  physical_address?: string;
+  state?: string;
+  SSDI?: string;
+  band?: string;
+  channel?: string;
+  radio_type?: string;
+  authentication?: string;
+  cipher?: string;
+  recieve_rate_mbps?: string;
+  transmit_rate_mbps?: string;
+  signal?: string;
+}
+
+export type TWifiScan = {
+  signal_quality_percent?: number;
+  signal_strength_dbm?: number;
+  snr_db?: number;
+  channel?: number;
+  frequency_ghz?: number;
+  interference_level?: string;
+  recommendation?: string;
+  status?: string;
+  interface?: IWifiInterface;
+}
+
 export type TDNSResults = IDNSResult[];
 export type TTracerouteHop = {
   "failed_at_hops": Array<number>,
