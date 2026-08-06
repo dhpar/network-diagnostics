@@ -9,12 +9,10 @@
             "console": "internalConsole",
             "env": {
                 "FLASK_APP": "backend/app.py",
-                "FLASK_DEBUG": "1"
+                "FLASK_DEBUG": "1",
+                // "FLASK_ENV": "development"
             },
-            "args": [
-                "run",
-                "--no-debugger"
-            ],
+            "args": ["run", "--no-debugger", "--no-reload"],
             "jinja": true,
             "justMyCode": true
         },

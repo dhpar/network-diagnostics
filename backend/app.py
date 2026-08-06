@@ -46,8 +46,8 @@ def handle_unexpected_error(error):
         }
     ), 500
 app.register_blueprint(routes)
-
 init_db()
+
 scan_thread = threading.Thread(target=background_scan, daemon=True)
 scan_thread.start()
 

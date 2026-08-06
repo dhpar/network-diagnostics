@@ -95,7 +95,7 @@
   }
 
   figure {
-    inline-size: fit-content;
+    inline-size: -webkit-fill-available;
     margin-inline: auto;
   }
   figcaption {
@@ -135,7 +135,6 @@
     border: 1px solid transparent;
   }
   textarea {
-    field-sizing: content;
     min-block-size: 5lh;
     inline-size: 100%;
     max-inline-size: 100%;

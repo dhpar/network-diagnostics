@@ -5,8 +5,8 @@ import Card from "./components/Layout/Card/Card";
 import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 
 export default function Layout<T>({
-  children, title, isRefreshLoading, refetch, isRefetching
-}: { children: ReactNode, title?: string, isRefreshLoading?:boolean, refetch?: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<NoInfer<T>, Error>>, isRefetching?:boolean }) {
+  children, title, isRefreshLoading, refetch
+}: { children: ReactNode, title?: string, isRefreshLoading?:boolean, refetch?: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<NoInfer<T>, Error>>}) {
   const [connected, setConnected] = useState<boolean>(false);
   const [lastUpdate, setLastUpdate] = useState<Date>();
   const handleRefetchButton = (event:MouseEvent<HTMLButtonElement>) => {
@@ -53,17 +53,17 @@ export default function Layout<T>({
       {refetch? 
         <button
           onClick={handleRefetchButton}
-          disabled={isRefreshLoading || isRefetching }
+          disabled={isRefreshLoading}
           className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-4 py-2 rounded-lg transition-colors"
         >
-            <RefreshCw className={`w-4 h-4 ${isRefreshLoading || isRefetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isRefreshLoading? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button> : null}
         </div>
         <aside className="row-start-2">
-          <Card>
-            <nav className="flex flex-col gap-2 bg-gray-800 rounded-lg p-2 border border-gray-900">
-                <Link to="/" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
+          <Card className="p-[initial]">
+            <nav className="flex flex-col gap-2 bg-gray-800 rounded-lg p-2">
+                <Link to="/" className="p-2 [&.active]:font-bold [&.active]:bg-gray-700">
                   Home
                 </Link>
                 <Link to="/Devices" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">

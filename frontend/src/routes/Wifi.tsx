@@ -6,6 +6,7 @@ import { Wifi as WifiIcon, WifiOff as WifiOffIcon, Signal } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import Layout from "../Layout";
 import { useState, type ChangeEventHandler } from "react";
+import Card from "../components/Layout/Card/Card";
 
 export const Route = createFileRoute('/Wifi')({
   component: Wifi,
@@ -22,11 +23,13 @@ function Wifi() {
     const handleChangeRefetch:ChangeEventHandler<HTMLInputElement> = (e) => setRefetchInterval(e.currentTarget.value);
 
     const signalColor = (quality: number | undefined) => {
-        if (quality === undefined) return 'text-gray-500';
-        if (quality >= 80) return 'text-green-500';
-        if (quality >= 60) return 'text-blue-500';
-        if (quality >= 40) return 'text-amber-500';
-        return 'text-red-500';
+        if(!quality) return 'text-gray-500';
+        switch(true) {
+            case (quality >= 80): return 'text-green-500';
+            case (quality >= 60): return 'text-blue-500';
+            case (quality >= 40): return 'text-amber-500';
+            default: return 'text-red-500';
+        }
     };
 
     const interferenceColor = (level: string | undefined) => {
@@ -39,9 +42,9 @@ function Wifi() {
     };
 
     return (
-        <Layout title='WiFi Status' isRefreshLoading={isLoading} refetch={refetch} isRefetching={isRefetching}>
+        <Layout title='WiFi Status' isRefreshLoading={isLoading || isRefetching} refetch={refetch}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="grid-span-4">
+                <div className="col-start-4">
                     <label htmlFor='refetchInterval'>Refetch Interval</label>
                     <input type='number' id="refetchInterval" name="refetchInterval" onChange={handleChangeRefetch} placeholder={`${refetchInterval}`} className="bg-gray-300 flex border-gray-700 text-gray-800 p-2 mb-4" />
                 </div>
@@ -59,7 +62,7 @@ function Wifi() {
                 {!isError && !isLoading && data && (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            <Card>
                                 <div className="flex items-center space-x-2 mb-2">
                                     <Signal className="w-5 h-5 text-blue-400" />
                                     <span className="text-gray-400 text-sm">Signal Quality</span>
@@ -68,8 +71,8 @@ function Wifi() {
                                     {data.signal_quality_percent !== undefined ? `${data.signal_quality_percent}%` : 'N/A'}
                                     
                                 </p>
-                            </div>
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            </Card>
+                            <Card>
                                 <div className="flex items-center space-x-2 mb-2">
                                     <WifiIcon className="w-5 h-5 text-blue-400" />
                                     <span className="text-gray-400 text-sm">Signal Strength</span>
@@ -77,8 +80,8 @@ function Wifi() {
                                 <p className="font-mono text-2xl text-blue-300">
                                     {data.signal_strength_dbm !== undefined ? `${data.signal_strength_dbm} dBm` : 'N/A'}
                                 </p>
-                            </div>
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            </Card>
+                            <Card>
                                 <div className="flex items-center space-x-2 mb-2">
                                     <WifiIcon className="w-5 h-5 text-blue-400" />
                                     <span className="text-gray-400 text-sm">SNR</span>
@@ -86,8 +89,8 @@ function Wifi() {
                                 <p className="font-mono text-2xl text-green-300">
                                     {data.snr_db !== undefined ? `${data.snr_db} dB` : 'N/A'}
                                 </p>
-                            </div>
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            </Card>
+                            <Card>
                                 <div className="flex items-center space-x-2 mb-2">
                                     <WifiIcon className="w-5 h-5 text-blue-400" />
                                     <span className="text-gray-400 text-sm">Channel / Frequency</span>
@@ -95,33 +98,33 @@ function Wifi() {
                                 <p className="font-mono text-2xl text-gray-300">
                                     {data.channel !== undefined ? `${data.channel} / ${data.frequency_ghz?.toFixed(3)} GHz` : 'N/A'}
                                 </p>
-                            </div>
+                            </Card>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            <Card>
                                 <span className="text-gray-400 text-sm">Interference Level</span>
                                 <p className={`font-mono text-xl mt-1 ${interferenceColor(data.interference_level)} capitalize`}>
                                     {data.interference_level ?? 'Unknown'}
                                 </p>
-                            </div>
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            </Card>
+                            <Card>
                                 <span className="text-gray-400 text-sm">Status</span>
                                 <p className={`font-mono text-xl mt-1 ${data.status === 'connected' ? 'text-green-500' : 'text-gray-300'} capitalize`}>
                                     {data.status ?? 'Unknown'}
                                 </p>
-                            </div>
+                            </Card>
                         </div>
 
                         {data.recommendation && (
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            <Card>
                                 <span className="text-gray-400 text-sm">Recommendation</span>
                                 <p className="text-lg mt-1 text-gray-100">{data.recommendation}</p>
-                            </div>
+                            </Card>
                         )}
 
                         {data.interface && (
-                            <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                            <Card className={'p-[initial]'}>
                                 <table className="w-full divide-y divide-gray-700">
                                     <thead className="bg-gray-700">
                                         <tr>
@@ -196,7 +199,7 @@ function Wifi() {
                                         )}
                                     </tbody>
                                 </table>
-                            </div>
+                            </Card>
                         )}
                     </>
                 )}
