@@ -7,7 +7,7 @@
 			"type": "npm",
 			"script": "dev",
 			"path": "frontend/",
-			"isBackground": true, // 👈 CRITICAL: Tells VS Code not to wait for the process to exit
+			"isBackground": true,
       		"problemMatcher": {
 				"owner": "typescript",
 				"fileLocation": "relative",

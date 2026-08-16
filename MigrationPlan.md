@@ -128,37 +128,37 @@ transition.
 
 **What is needed:**
 
-- Refactor the backend Wi-Fi workflow so it no longer depends on launching a
-  separate Windows Python process from WSL
-- Replace the current bridge logic with a direct Windows-native
-  implementation
+~~ - Refactor the backend Wi-Fi workflow so it no longer depends on launching a ~~
+~~  separate Windows Python process from WSL ~~
+~~ - Replace the current bridge logic with a direct Windows-native ~~
+~~  implementation~~
 
 **Why:**
 
-- The current bridge approach has been a major source of issues, including
-  path mismatches, bad interpreter selection, and dependency resolution
-  failures.
-- A direct implementation is simpler and easier to debug.
-- It removes the dependency on WSL interop for the most fragile feature in the
-  project.
+~~ - The current bridge approach has been a major source of issues, including ~~
+~~  path mismatches, bad interpreter selection, and dependency resolution ~~
+~~  failures.~~
+~~ - A direct implementation is simpler and easier to debug. ~~
+~~ - It removes the dependency on WSL interop for the most fragile feature in the ~~
+~~  project. ~~
 
 #### Step 7: Replace the current Wi-Fi scanning approach with a native Windows implementation
 
 **What is needed:**
 
-- Implement Wi-Fi scanning directly in the backend using a Windows-compatible
-  library such as `pywifi`
-- Ensure the code runs in-process on Windows without shelling out to another
-  interpreter
-- Validate that it can return network information such as SSID and signal
-  strength
+~~ - Implement Wi-Fi scanning directly in the backend using a Windows-compatible ~~
+~~  library such as `pywifi` ~~
+~~ - Ensure the code runs in-process on Windows without shelling out to another ~~
+~~  interpreter ~~
+~~ - Validate that it can return network information such as SSID and signal ~~
+~~  strength ~~
 
 **Why:**
 
-- The project’s Wi-Fi feature is the main reason for the migration.
-- Native Windows APIs are the correct integration point for this feature.
-- This is the highest-value change because it removes the most unstable part of
-  the current architecture.
+~~ - The project’s Wi-Fi feature is the main reason for the migration. ~~
+~~ - Native Windows APIs are the correct integration point for this feature.~~
+~~ - This is the highest-value change because it removes the most unstable part of ~~
+~~  the current architecture.~~
 
 #### Step 8: Rewrite the traceroute implementation for Windows
 

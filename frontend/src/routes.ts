@@ -11,6 +11,7 @@ export default {
     PUTDEVICELABEL: (mac: string) => `${API_URL}/api/devices/update/${mac}/label`,
     DELETEDEVICE: (mac: string) => `${API_URL}/api/devices/delete/${mac}/label`,
     SCAN_WIFI: `${API_URL}/api/wifi/scan`,
+    SCAN_WIFI_NETWORKS: `${API_URL}/api/wifi/scan/neighbor`,
     DNS_TEST: `${API_URL}/api/dns/test`,
     TRACEROUTE: `${API_URL}/api/traceroute?target=google.com`,
 }

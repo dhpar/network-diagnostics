@@ -78,6 +78,31 @@ export type TWifiScan = {
   interface?: IWifiInterface;
 }
 
+export type TWifiNetworksScan = [{
+  ssid: string,
+  network_type: string,
+  encryption: string,
+  authentication: string,
+  BSSID: [
+      {
+          signal: string,
+          radio_type: string,
+          band: string,
+          channel: string,
+          details: string,
+          bss_load:{
+              connected_stations: number,
+              channel_utilization: string,
+              medium_available_capacity: string
+          },
+          QoS_MSCS_suported: boolean,
+          QoS_Map_supported: boolean,
+          basic_rates_mbps: string,
+          other_rates_mbps: string
+      }
+  ]
+}]
+
 export type TDNSResults = IDNSResult[];
 export type TTracerouteHop = {
   "failed_at_hops": Array<number>,

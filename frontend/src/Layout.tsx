@@ -66,17 +66,20 @@ export default function Layout<T>({
                 <Link to="/" className="p-2 [&.active]:font-bold [&.active]:bg-gray-700">
                   Home
                 </Link>
-                <Link to="/Devices" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
+                <Link to="/Devices" className="p-2 [&.active]:font-bold [&.active]:bg-gray-700">
                   Devices
                 </Link>
-                <Link to="/DNS" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
+                <Link to="/DNS" className="p-2 [&.active]:font-bold [&.active]:bg-gray-700">
                   DNS Lookup
                 </Link>
-                <Link to="/Traceroute" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
+                <Link to="/Traceroute" className="p-2 [&.active]:font-bold [&.active]:bg-gray-700">
                   Traceroute
                 </Link>
-                <Link to="/Wifi" className=" p-2 [&.active]:font-bold [&.active]:bg-gray-700">
+                <Link to="/Wifi" className="p-2 [&.active]:font-bold [&.active]:bg-gray-700">
                   WiFi
+                </Link>
+                <Link to="/WifiNetworks" className="p-2 [&.active]:font-bold [&.active]:bg-gray-700">
+                  WiFi Networks
                 </Link>
             </nav>
           </Card>

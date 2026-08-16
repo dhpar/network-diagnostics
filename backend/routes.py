@@ -7,7 +7,7 @@ from backend.mac_utils import get_net_mask
 from backend.traceroute import traceroute_host
 from backend.utils import get_hostname, net_config, ping_host
 from backend.database import Device, delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
-from backend.wifi import get_wifi_signal_quality
+from backend.wifi import get_neighbor_nets, get_wifi_signal_quality
 from flask import request, jsonify, abort, Blueprint, request, current_app
 import socket
 
@@ -20,6 +20,7 @@ network_info_route = '/api/network/info'
 ping_route = '/api/ping/<ip>'
 dns_route = '/api/dns/'
 wifi_route = '/api/wifi/scan'
+wifi_neighbor_route = '/api/wifi/scan/neighbor'
 traceroute_route = '/api/traceroute'
 devices_route = '/api/devices'
 devices_update_route = '/api/devices/update/<mac>/label'
@@ -84,9 +85,19 @@ def dns_test():
     
     return jsonify(results)
 
+@routes.route(wifi_neighbor_route)
+def wifi_neighbor_networks():
+    """Scan for nearby WiFi neighbor networks via native Windows Python"""
+    try:
+        wifi_neighbor = get_neighbor_nets() 
+        return jsonify(wifi_neighbor)
+    except Exception as e:
+        print(f"WiFi scan error: {e}")
+        return jsonify({'error': 'Error getting wifi neighbors'}), 500
+
 @routes.route(wifi_route)
 def wifi_scan():
-    """Scan for nearby WiFi networks via native Windows Python (WSL has no radio access)"""
+    """Scan for nearby WiFi networks via native Windows Python"""
     try:
         wifi_quality = get_wifi_signal_quality()
         return jsonify(wifi_quality)
@@ -169,11 +180,3 @@ def delete_device_label(mac):
         return jsonify({'error': f'No label found for mac {normalized_mac}'}), 404
 
     return jsonify({'mac': normalized_mac, 'deleted': True})
-
-# @routes.route(devices_leasetime_route)
-# def get_lease_time():
-#     lease = lease_DHCP_time()
-#     error = lease['stderr']
-#     if(error is not None):
-#         return error
-#     return jsonify(lease['stdout'])

@@ -1,8 +1,34 @@
+from dataclasses import dataclass
+import re
 import subprocess
 from venv import logger
 import subprocess
-from typing import Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 
+# import jc
+@dataclass
+class WiFiNetwork:
+    ssid: str
+    signal: str
+    radio_type: str
+    channel: str
+    bssid: str
+
+def get_neighbor_nets():
+    # This function returns the neightboring networks and it's signal's channel and quality. Should help asses if we need to change our network's channel or band.
+    result = subprocess.run(
+            ['netsh', 'wlan', 'show', 'networks', 'mode=bssid'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+    wifi_networks_data = parse_netsh_wlan_networks(result.stdout) 
+    if not wifi_networks_data:
+        return None
+
+    return wifi_networks_data
+    
 def get_interface_data():
     result = subprocess.run(
         ['netsh', 'wlan', 'show', 'interface'],
@@ -199,4 +225,141 @@ def get_signal_recommendation(signal_quality: Optional[int], snr: Optional[int])
         return "Poor signal - move closer to router or reduce interference"
     else:
         return "Very poor signal - connection may be unstable"
-    
+
+def sort_list_of_dict_by(data, field:str):
+    sorted_data = sorted(data, key=lambda x: x[field])
+    return sorted_data
+
+def parse_netsh_wlan_networks(raw_output: str) -> List[Dict[str, Any]]:
+    networks: List[Dict[str, Any]] = []
+    current_network: Optional[Dict[str, Any]] = None
+    current_bssid: Optional[Dict[str, Any]] = None
+    in_bss_load = False
+ 
+    ssid_re = re.compile(r'^SSID \d+\s*:\s?(.*)$')
+    bssid_re = re.compile(r'^BSSID \d+\s*:\s*(.*)$')
+ 
+    for raw_line in raw_output.splitlines():
+        if not raw_line.strip():
+            continue
+ 
+        indent = len(raw_line) - len(raw_line.lstrip(' '))
+        line = raw_line.strip()
+ 
+        # Top-level: new SSID block
+        if indent == 0:
+            ssid_match = ssid_re.match(line)
+            if ssid_match:
+                current_network = {
+                    "ssid": ssid_match.group(1).strip(),  # can be "" for hidden networks
+                    "network_type": None,
+                    "authentication": None,
+                    "encryption": None,
+                    "bssids": [],
+                }
+                networks.append(current_network)
+                current_bssid = None
+                in_bss_load = False
+            continue  # ignores "Interface name" / "There are N networks..." header lines
+ 
+        if current_network is None:
+            continue
+ 
+        # SSID-level: new BSSID block, or SSID metadata (Network type / Authentication / Encryption)
+        if indent == 4:
+            bssid_match = bssid_re.match(line)
+            if bssid_match:
+                current_bssid = {
+                    "bssid": bssid_match.group(1).strip(),
+                    "signal_percent": None,
+                    "radio_type": None,
+                    "band": None,
+                    "channel": None,
+                    "details": None,
+                    "bss_load": None,
+                    "qos_mscs_supported": None,
+                    "qos_map_supported": None,
+                    "basic_rates_mbps": [],
+                    "other_rates_mbps": [],
+                }
+                current_network["bssids"].append(current_bssid)
+                in_bss_load = False
+                continue
+ 
+            key, _, value = line.partition(':')
+            key, value = key.strip().lower(), value.strip()
+            if key == "network type":
+                current_network["network_type"] = value
+            elif key == "authentication":
+                current_network["authentication"] = value
+            elif key == "encryption":
+                current_network["encryption"] = value
+            continue
+ 
+        if current_bssid is None:
+            continue
+ 
+        # Bss Load sub-fields, nested one level deeper than the other BSSID fields
+        if in_bss_load and indent > 9:
+            key, _, value = line.partition(':')
+            key, value = key.strip().lower(), value.strip()
+            bss_load:dict[str, str | int | None] | Any = current_bssid["bss_load"]
+            if key == "connected stations":
+                bss_load["connected_stations"] = int(value) or None
+            elif key == "channel utilization":
+                m = re.match(r'(\d+)\s*\((\d+)\s*%\)', value)
+                if m:
+                    bss_load["channel_utilization_raw"] = int(m.group(1))
+                    bss_load["channel_utilization_percent"] = int(m.group(2))
+            elif key == "medium available capacity":
+                m = re.match(r'(\d+)\s*\(([^)]+)\)', value)
+                if m:
+                    bss_load["medium_available_capacity"] = int(m.group(1))
+                    bss_load["medium_available_capacity_unit"] = m.group(2).strip()
+            continue
+ 
+        # BSSID-level fields
+        if indent == 9:
+            key, _, value = line.partition(':')
+            key, value = key.strip().lower(), value.strip()
+            in_bss_load = False
+ 
+            if key == "signal":
+                current_bssid["signal_percent"] = int(value.replace('%', '').strip())
+            elif key == "radio type":
+                current_bssid["radio_type"] = value
+            elif key == "band":
+                current_bssid["band"] = value
+            elif key == "channel":
+                current_bssid["channel"] = int(value)
+            elif key == "details":
+                current_bssid["details"] = value.strip('() ') or None
+            elif key == "bss load":
+                current_bssid["bss_load"] = {
+                    "connected_stations": None,
+                    "channel_utilization_raw": None,
+                    "channel_utilization_percent": None,
+                    "medium_available_capacity": None,
+                    "medium_available_capacity_unit": None,
+                }
+                in_bss_load = True
+            elif key == "qos mscs supported":
+                current_bssid["qos_mscs_supported"] = True if value == '1' else False
+            elif key == "qos map supported":
+                current_bssid["qos_map_supported"] = True if value == '1' else False
+            elif key.startswith("basic rates"):
+                current_bssid["basic_rates_mbps"] = _parse_rates(value)
+            elif key.startswith("other rates"):
+                current_bssid["other_rates_mbps"] = _parse_rates(value)
+ 
+    return networks
+ 
+ 
+def _parse_rates(value: str) -> List[float]:
+    rates = []
+    for token in value.split():
+        try:
+            rates.append(float(token) if '.' in token else int(token))
+        except ValueError:
+            pass
+    return rates
