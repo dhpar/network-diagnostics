@@ -54,7 +54,7 @@ def get_net_mask():
 
     _, msk = min(candidates, key=lambda pair: bin(pair[1]).count('1'))
     return bin(msk).count('1')
-
+    
 def mac_lookup_vendor(mac):
     """
     Looks up the manufacturer for a device's MAC address using scapy's
@@ -69,3 +69,7 @@ def mac_lookup_vendor(mac):
     result = scapy.conf.manufdb._get_manuf(mac)
     
     return None if result.lower() == mac.lower() else result
+
+
+# def mac_lookup_vendor_api(mac:String)->String | None:
+#     return None
