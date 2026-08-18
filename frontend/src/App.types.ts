@@ -78,30 +78,37 @@ export type TWifiScan = {
   interface?: IWifiInterface;
 }
 
-export type TWifiNetworksScan = [{
-  ssid: string,
-  network_type: string,
-  encryption: string,
-  authentication: string,
-  BSSID: [
-      {
-          signal: string,
-          radio_type: string,
-          band: string,
-          channel: string,
-          details: string,
-          bss_load:{
-              connected_stations: number,
-              channel_utilization: string,
-              medium_available_capacity: string
-          },
-          QoS_MSCS_suported: boolean,
-          QoS_Map_supported: boolean,
-          basic_rates_mbps: string,
-          other_rates_mbps: string
-      }
-  ]
-}]
+export interface IWifiBssidLoad {
+  connected_stations?: number | null;
+  channel_utilization_raw?: number | null;
+  channel_utilization_percent?: number | null;
+  medium_available_capacity?: number | null;
+  medium_available_capacity_unit?: string | null;
+}
+
+export interface IWifiBssid {
+  bssid: string;
+  signal_percent?: number | null;
+  radio_type?: string | null;
+  band?: string | null;
+  channel?: number | null;
+  details?: string | null;
+  bss_load?: IWifiBssidLoad | null;
+  qos_mscs_supported?: boolean | null;
+  qos_map_supported?: boolean | null;
+  basic_rates_mbps?: number[];
+  other_rates_mbps?: number[];
+}
+
+export interface IWifiNeighborNetwork {
+  ssid: string;
+  network_type?: string | null;
+  authentication?: string | null;
+  encryption?: string | null;
+  bssids: IWifiBssid[];
+}
+
+export type TWifiNetworksScan = IWifiNeighborNetwork[];
 
 export type TDNSResults = IDNSResult[];
 export type TTracerouteHop = {
