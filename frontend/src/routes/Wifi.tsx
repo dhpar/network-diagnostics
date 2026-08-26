@@ -10,6 +10,7 @@ import Card from "../components/Layout/Card/Card";
 import Gauge from "../components/Graphs/Gauge";
 import Loading from "../components/States/Loading";
 import Error from "../components/States/Error";
+import { valueToTextColor } from "../Utils/cssClasses";
 
 export const Route = createFileRoute('/Wifi')({
   component: Wifi,
@@ -24,16 +25,6 @@ function Wifi() {
         refetchInterval: parseInt(refetchInterval)*1000
     });
     const handleChangeRefetch:ChangeEventHandler<HTMLInputElement> = (e) => setRefetchInterval(e.currentTarget.value);
-
-    const signalColor = (quality: number | undefined):string => {
-        if(!quality) return 'text-gray-500';
-        switch(true) {
-            case (quality >= 80): return 'text-green-500';
-            case (quality >= 60): return 'text-blue-500';
-            case (quality >= 40): return 'text-amber-500';
-            default: return 'text-red-500';
-        }
-    };
 
     const interferenceColor = (level: string | undefined) => {
         switch(level) {
@@ -63,12 +54,12 @@ function Wifi() {
                                     <Signal className="w-5 h-5 text-blue-400" />
                                     <span className="text-gray-400 text-sm">Signal Quality</span>
                                 </div>
-                                <p className={`font-mono text-2xl ${signalColor(data.signal_quality_percent)}`}>
+                                <p className={`font-mono text-2xl ${valueToTextColor(data.signal_quality_percent)}`}>
                                     <Gauge 
                                         value={data.signal_quality_percent || 0}  
                                         className="mx-auto" 
                                         width={320}
-                                        gaugeColor={signalColor(data.signal_quality_percent)}
+                                        gaugeColor={valueToTextColor(data.signal_quality_percent)}
                                         trackColor="fill-gray-300"
                                     />
                                 </p>

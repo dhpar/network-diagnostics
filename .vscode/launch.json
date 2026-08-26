@@ -23,7 +23,7 @@
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/frontend",
             "preLaunchTask": "vite: dev",
-            "skipFiles": [ "${workspaceFolder}/node_modules/**/*.js" ],
+            "skipFiles": [ "${workspaceFolder}/frontend/node_modules/**/*.*" ],
             "serverReadyAction": {
 				"action": "openExternally",
 				"pattern": "http://localhost:([0-9]+)",

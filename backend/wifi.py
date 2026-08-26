@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import re
 import subprocess
+import time
 from venv import logger
 import subprocess
 from typing import List, Optional, Dict, Any
@@ -14,26 +15,42 @@ class WiFiNetwork:
     channel: str
     bssid: str
 
-def wifi_interface_restart():
-    # With the `netsh wlan show networks mode=bssid` we are reading cached results, in order to read "fresh results" we need to turn off the windows service and turn it back on to refresh the cached results, this is what we are doing here.
-    subprocess.run(['netsh', 'interface', 'set', 'interface', "Wi-Fi", 'admin=disabled']);
-    subprocess.run(['netsh', 'interface', 'set', 'interface', "Wi-Fi", 'admin=enabled']);
-    
-def get_neighbor_nets():
-    # This function returns the neightboring networks and it's signal's channel and quality. Should help asses if we need to change our network's channel or band.
-    wifi_interface_restart()
-    result = subprocess.run(
-            ['netsh', 'wlan', 'show', 'networks', 'mode=bssid'],
+def get_neighbor_nets(retries=5, delay=2):
+    for attempt in range(retries):
+        # optional: detect if adapter is asleep or stale
+        iface = subprocess.run(
+            ["netsh", "wlan", "show", "networks", "mode=bssid"],
             capture_output=True,
             text=True,
-            check=True
+            timeout=15,
         )
 
-    wifi_networks_data = parse_netsh_wlan_networks(result.stdout) 
-    if not wifi_networks_data:
-        return None
+        if "State" in iface.stdout and "disconnected" in iface.stdout.lower():
+            # wake/reset adapter before scan
+            subprocess.run(
+                [
+                    "powershell", 
+                    "-NoProfile", 
+                    "-Command",
+                    "Get-NetAdapter -Name 'Wi-Fi' | Disable-NetAdapter -Confirm:$false;"
+                    
+                    "Start-Sleep -Seconds 2;"
+                    
+                    "Get-NetAdapter -Name 'Wi-Fi' | Enable-NetAdapter -Confirm:$false"
+                ],
+                capture_output=True,
+                text=True,
+                timeout=20
+            ) 
+            time.sleep(delay)
 
-    return wifi_networks_data
+        networks = parse_netsh_wlan_networks(iface.stdout)
+        
+        
+        return networks if networks else []
+
+
+    return []
     
 def get_interface_data():
     result = subprocess.run(

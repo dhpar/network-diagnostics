@@ -1,3 +1,4 @@
+import type { Row, TableFeature, Table, RowModel, CreatedFilterFn, HeaderGroup } from "@tanstack/react-table";
 
 
 // 1. Create a plain object configuration
@@ -134,6 +135,55 @@ export type TTracerouteHop = {
   "total_hops": number
 }
 
-export type TTracerouteResults = TTracerouteHop[];
+export interface IWifiTableData {
+    ssid?: string;
+    network_type?: string | null;
+    authentication?: string | null;
+    encryption?: string | null;
+    bssid?: string;
+    signal_percent?: number | null;
+    radio_type?: string | null;
+    band?: string | null;
+    channel?: number | null;
+    bss_load?: IWifiBssidLoad | null;
+    connected_stations?: number | null;
+    channel_utilization_percent?: number | null;
+    subRows?: IWifiTableData[];
+}
 
-export type TabType = 'dashboard' | 'devices' | 'wifi' | 'DNS' | 'traceroute';
+export type TTracerouteResults = TTracerouteHop[];
+export interface IRowProps {
+    row: Row<{
+        rowExpandingFeature: TableFeature;
+        expandedRowModel: (table: Table<any, any>) => () => RowModel<any, any>;
+        columnFilteringFeature: TableFeature;
+        filteredRowModel: (table: Table<any, any>) => () => RowModel<any, any>;
+        rowSortingFeature: TableFeature;
+        sortedRowModel: (table: Table<any, any>) => () => RowModel<any, any>;
+        filterFns: {
+            equalsString: CreatedFilterFn<any, any>;
+        };
+    }, IWifiTableData>
+}
+
+export interface IHeaderRowProps {
+  headerGroup: HeaderGroup<{
+    rowExpandingFeature: TableFeature;
+    expandedRowModel: (table: Table<any, any>) => () => RowModel<any, any>;
+    columnFilteringFeature: TableFeature;
+    filteredRowModel: (table: Table<any, any>) => () => RowModel<any, any>;
+    rowSortingFeature: TableFeature;
+    sortedRowModel: (table: Table<any, any>) => () => RowModel<any, any>;
+    filterFns: {
+      equalsString: CreatedFilterFn<any, any>;
+    };
+  }, IWifiTableData>
+}
+type ColumnSort = {
+  id: string
+  desc: boolean
+}
+
+export type SortingState = ColumnSort[]
+
+export type TabType = 'dashboard' | 'devices' | 'wifi' | 'DNS' | 'traceroute' |'wifi-neighbors';

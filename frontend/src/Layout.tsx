@@ -25,7 +25,7 @@ export default function Layout<T>({
         <div className="mx-auto py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Network className="w-8 h-8 text-blue-400" />
+              <Network className="w-8 h-8 text-transparent" stroke={`var(--color-green-400)`} />
               <h1 className="text-2xl font-bold">Network Diagnostics</h1>
             </div>
             

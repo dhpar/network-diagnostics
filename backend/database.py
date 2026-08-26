@@ -72,6 +72,16 @@ def init_db():
                 )
         ''')
 
+        # c.execute('''
+        #     CREATE TABLE IF NOT EXISTS 
+        #         wifi_Networks (
+        #             id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #             sssid: TEXT;
+        #             network_type: TEXT;
+        #             authentication?: TEXT;
+        #             encryption?: TEXT;
+        #         )
+        #     ''')
         conn.commit()
     
 def insert_or_replace_device_db(devices:List[Device]):
@@ -162,4 +172,3 @@ def update_device_hostname(ip, hostname):
             WHERE ip = ?
         ''', (hostname, ip))
         conn.commit()
-        
