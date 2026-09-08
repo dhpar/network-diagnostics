@@ -10,10 +10,10 @@ I'm still actively building this, here's what works so far:
 - ✅ Network Discovery.
 - ✅ DNS Diagnostics.
 - ✅ Real-time Updates.
-- ❌ WiFi Scanning.
-- ❌ Extending network discovery capabilities.
+- ✅ WiFi Scanning.
+- ✅ Extending network discovery capabilities.
 - ❌ Creating "easy to debug network" issues page, ie:
-  - There is isues reaching the wifi.
+  - There is issues reaching the wifi.
   - Can't reach the router.
   - Issues with the DNS.
   - Maybe issues with DHCP.
