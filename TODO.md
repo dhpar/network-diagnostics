@@ -4,21 +4,10 @@
 
 This is a general task section.
 
-- [ ] Move devices and IPs to a context provider to be able to access to it accross the app.
-- [ ] Finish up wiring the Traceroute tab.
-  - Similar layout than Devices?
-- [ ] Fix the Wifi tab.
-- [ ] Switch to Suspense.
-- [ ] Implement React Router while switching tabs.
-- [ ] Connected Icon is inconsistent, find a way to make it more relevant, maybe using the `/api/ping/<ip>` endpoint?
-  - ~~Should make all the other queries dependants on this one? ie: If this query fails do not run all the others?~~ Doesn't make sense, since is that is the main goal of this app, to run the other queries and figure out where the network issue is.
+- [ ] Move devices and IPs to a context provider to be able to access to it across the app.
 - [ ] Implement direct communication with router.
-- [ ] Implement Tanstack router.
-- [ ] Implement database storage in backend, in order to show historical data, assign names to IPs (ie: 192.168.0.23 is a smart outlet).
-- [ ] Implement fake DHCP detection via Scapy.
-- [ ] Move to a totally dockerized execution native on windows. This should allow direct accesss to wifi phisical layer, AKA: signal strengh, Signal-Noise Ratio, chanels, wifi name...
 - [ ] Implement an endpoint to check if relevant services are down: is Netflix down?, is Disney plus down?, is quantum fiber down?,...
-  - Fetch request to check for quantum fiber outage:
+- [ ] Fetch request to check for quantum fiber outage:
 
     ```javascript
     fetch("https://www.quantumfiber.com/on/demandware.store/Sites-QFCC-Site/default/MPOutageTool-RenderOutageMapByAddr", {"headers": { "accept": "*/*",
@@ -42,3 +31,12 @@ This is a general task section.
 A section to keep track of completed work.
 
 - [x] Initialized project repository.
+- [x] Finish up wiring the Traceroute tab.
+- [x] Fix the Wifi tab.
+- [x] Switch to Suspense.
+- [x] Implement React Router while switching tabs.
+- [x] Connected Icon is inconsistent, find a way to make it more relevant, maybe using the `/api/ping/<ip>` endpoint?
+- [x] Implement Tanstack router.
+- [x] Implement database storage in backend, in order to show historical data, assign names to IPs (ie: 192.168.0.23 is a smart outlet).
+- [x] Implement fake DHCP detection via Scapy.
+- [x] Move to a totally dockerized execution native on windows. This should allow direct accesss to wifi phisical layer, AKA: signal strengh, Signal-Noise Ratio, chanels, wifi name...

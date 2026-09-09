@@ -1,4 +1,4 @@
-# Native Windows Migration Plan
+# Native Windows Migration Plan (This plan is officially done 🤘)
 
 This document turns the rough migration notes into a concrete step-by-step
 plan for moving the Network Diagnostics project from the current WSL-based
