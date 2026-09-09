@@ -1,17 +1,19 @@
-export const valueToColor = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return 'bg-gray-500';
-    if (value >= 80) return 'bg-green-500';
-    if (value >= 60) return 'bg-blue-500';
-    if (value >= 40) return 'bg-amber-500';
-    return 'bg-red-500';
-};
 
-export const valueToTextColor = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return 'text-gray-500';
+
+export const valueToPropertyColor = (value?: number | null, property: string = 'text'): string =>  {
+    if (value === null || value === undefined) 
+        return property === 'bg'? 'bg-gray-500' : 'text-gray-500';
+
     switch(true) {
-        case (value >= 80): return 'text-green-500';
-        case (value >= 60): return 'text-blue-500';
-        case (value >= 40): return 'text-amber-500';
-        default: return 'text-red-500';
+        case (value >= 80): 
+            return property === 'bg'? 'bg-green-500' : 'text-green-500';
+        case (value >= 60): 
+            return property === 'bg'? 'bg-blue-600' : 'text-blue-600';
+        case (value >= 40): 
+            return property === 'bg'? 'bg-amber-500' : 'text-amber-500' ;
+        case (value < 40): 
+            return property === 'bg'? 'bg-red-500' : 'text-red-500';
+        default: 
+            return property === 'bg'? 'bg-gray-500' : 'text-gray-500';
     }
-}
+};

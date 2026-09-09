@@ -39,14 +39,17 @@ function Traceroute() {
 
     if (isError) {
         return (
-        <Layout title={'Traceroute'} RefreshBtn={() => <button
-                        onClick={() => refetch()}
-                        disabled={isLoading}
-                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
-                        <span>Refresh</span>
-                    </button>}>
+            <Layout 
+                title={'Traceroute'} 
+                RefreshBtn={() => 
+                <button
+                    onClick={() => refetch()}
+                    disabled={isLoading}
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+                >
+                    <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                </button>}>
             <div className="space-y-6">
                 <div className="space-y-6">
                     <div className="text-red-400 text-sm">
@@ -69,14 +72,16 @@ function Traceroute() {
     }
 
     return (
-        <Layout title={'Traceroute'} RefreshBtn={() => <button
-                        onClick={() => refetch()}
-                        disabled={isLoading}
-                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
-                        <span>Refresh</span>
-                    </button>}>
+        <Layout 
+            title={'Traceroute'} 
+            RefreshBtn={() => <button
+                onClick={() => refetch()}
+                disabled={isLoading}
+                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg transition-colors"
+            >
+                <RefreshCw className={`w-4 h-4 ${isLoading? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+            </button>}>
             
             <h3 className="text-xl">Traceroute state: {data.reached? <span className="text-blue-500">Has reached the destination</span> :<span className="text-red-500">Hasn't reached the destination</span>}</h3>
             

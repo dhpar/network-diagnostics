@@ -4,9 +4,17 @@ import { useEffect, useState, type ReactNode, type MouseEvent } from "react";
 import Card from "./components/Layout/Card/Card";
 import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 
+interface ILayout<T> { 
+  children: ReactNode, 
+  title?: string, 
+  isRefreshLoading?:boolean, 
+  refetch?: 
+    (options?: RefetchOptions | undefined) =>     
+      Promise<QueryObserverResult<NoInfer<T>, Error>>
+}
 export default function Layout<T>({
   children, title, isRefreshLoading, refetch
-}: { children: ReactNode, title?: string, isRefreshLoading?:boolean, refetch?: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<NoInfer<T>, Error>>}) {
+}: ILayout<T>) {
   const [connected, setConnected] = useState<boolean>(false);
   const [lastUpdate, setLastUpdate] = useState<Date>();
   const handleRefetchButton = (event:MouseEvent<HTMLButtonElement>) => {

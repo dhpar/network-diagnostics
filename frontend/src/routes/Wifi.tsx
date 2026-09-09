@@ -10,7 +10,7 @@ import Card from "../components/Layout/Card/Card";
 import Gauge from "../components/Graphs/Gauge";
 import Loading from "../components/States/Loading";
 import Error from "../components/States/Error";
-import { valueToTextColor } from "../Utils/cssClasses";
+import { valueToPropertyColor } from "../Utils/cssClasses";
 
 export const Route = createFileRoute('/Wifi')({
   component: Wifi,
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/Wifi')({
 
 function Wifi() {
     const wifiScanRequest = getResource(ROUTES.SCAN_WIFI);
-    const [refetchInterval, setRefetchInterval] = useState("30");
+    const [refetchInterval, setRefetchInterval] = useState("1");
     const { data, refetch, isLoading, isRefetching, isError, error, isFetched } = useQuery({
         queryKey: ['Wifi scan'],
         queryFn: () => fetchResource<TWifiScan>(wifiScanRequest),
@@ -54,12 +54,11 @@ function Wifi() {
                                     <Signal className="w-5 h-5 text-blue-400" />
                                     <span className="text-gray-400 text-sm">Signal Quality</span>
                                 </div>
-                                <p className={`font-mono text-2xl ${valueToTextColor(data.signal_quality_percent)}`}>
+                                <p className={`font-mono text-2xl`}>
                                     <Gauge 
                                         value={data.signal_quality_percent || 0}  
                                         className="mx-auto" 
                                         width={320}
-                                        gaugeColor={valueToTextColor(data.signal_quality_percent)}
                                         trackColor="fill-gray-300"
                                     />
                                 </p>
@@ -96,7 +95,7 @@ function Wifi() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Card>
                                 <span className="text-gray-400 text-sm">Interference Level</span>
-                                <p className={`font-mono text-xl mt-1 ${interferenceColor(data.interference_level)} capitalize`}>
+                                <p className={`font-mono text-xl mt-1 ${valueToPropertyColor(parseInt(data.interference_level || '0'))} capitalize`}>
                                     {data.interference_level ?? 'Unknown'}
                                 </p>
                             </Card>

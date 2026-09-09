@@ -15,14 +15,13 @@ import {
     FlexRender,
 } from "@tanstack/react-table";
 import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
-import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import Layout from "../Layout";
 import { fetchResource, getResource } from "../utils";
-import type { IWifiNeighborNetwork, IWifiTableData, TWifiNetworksScan } from "../App.types";
+import type { IWifiNeighborNetwork, IWifiTableData, TNetworks, TWifiScan } from "../App.types";
 import ROUTES from '../routes';
 import Error from "../components/States/Error";
 import FilterTabs, { type FilterTabOption } from "../components/Filters/FilterTabs";
-import { SkeletonTable } from "../components/States/Loading";
+import { SkeletonElement, SkeletonTable } from "../components/States/Loading";
 import { SSID } from "../components/WifiNetwork/Cells/SSID";
 import { SignalPercent } from "../components/WifiNetwork/Cells/SignalPercent";
 import { Band } from "../components/WifiNetwork/Cells/Band";
@@ -39,6 +38,7 @@ export const Route = createFileRoute('/WifiNetworks')({
 
 type Features = typeof features;
 
+
 const features = tableFeatures({
     rowExpandingFeature,
     expandedRowModel: createExpandedRowModel(),
@@ -46,6 +46,7 @@ const features = tableFeatures({
     filteredRowModel: createFilteredRowModel(),
     rowSortingFeature,
     sortedRowModel: createSortedRowModel(),
+    
     filterFns: { equalsString: filterFn_equalsString },
 });
 
@@ -132,7 +133,13 @@ function WifiNetwork() {
         id: 'signal',
         desc: true
     }]);
-
+    const wifiScanRequest = getResource(ROUTES.SCAN_WIFI);
+    const wifiScan = useQuery({
+        queryKey: ['Wifi scan'],
+        queryFn: () => fetchResource<TWifiScan>(wifiScanRequest),
+        refetchInterval: 0
+        // refetchInterval: 3000
+    });
     const wifiNetworksRequest = getResource(ROUTES.SCAN_WIFI_NETWORKS);
     const { 
         data, 
@@ -142,10 +149,11 @@ function WifiNetwork() {
         error, 
         isRefetching, 
         refetch
-    } = useQuery<TWifiNetworksScan>({
+    } = useQuery<IWifiNeighborNetwork[]>({
         queryKey: ['Wifi Networks scan'],
         queryFn: () => fetchResource(wifiNetworksRequest),
-        refetchInterval: 1000
+        refetchInterval: 0
+        // refetchInterval: 1000
     });
     
     
@@ -170,18 +178,35 @@ function WifiNetwork() {
 
     const bandOptions: FilterTabOption<string>[] = useMemo(() => {
         const bandCounts = new Map<string, number>();
-        const networkBands = filterBands(tableData).map((band) => ({
+        const networkBands = filterBands(tableData)
+            .map((band) => ({
                 value: band,
                 label: band,
                 count: bandCounts.get(band),
-
-        }));
+            }));
         return [
-            { value: 'all', label: 'All', count: networkBands.length },
+            { 
+                value: 'all', 
+                label: 'All', 
+                count: networkBands.length 
+            },
             ...networkBands,
         ];
     }, [tableData]);
+    const getNetworkByBand = (band?: string): TNetworks =>
+        data?.flatMap((network) =>
+            network.bssids
+                .filter((bssid) => band === undefined || bssid.band === band)
+                .map((bssid) => ({
+                    ssid: network.ssid,
+                    bssid: bssid.bssid,
+                    channel: bssid.channel,
+                    signalPercent: bssid.signal_percent,
+                    band: bssid.band
+                }))
+        ) ?? [];
 
+    
     const handleBandChange = (band: string) => setColumnFilters(band === 'all' ? [] : [{ id: 'band', value: band }]);
     const { rows } = table.getRowModel();
     
@@ -192,7 +217,6 @@ function WifiNetwork() {
     }
     if(isLoading) {
         return <Layout title='WiFi Networks'>
-            
             <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                 <table className="w-full">
                     <thead className="bg-gray-700">
@@ -205,20 +229,39 @@ function WifiNetwork() {
                         </tr>
                     </thead>
                     <tbody>
-                        <SkeletonTable rows={4} cols={columns.length} />
+                        <SkeletonTable rows={3} cols={columns.length} />
                     </tbody>
                 </table>
             </div>
         </Layout>
     }
+  
     return (
         <Layout title='WiFi Networks' isRefreshLoading={isLoading || isRefetching} refetch={refetch}>
             <div className="space-y-6">
-                <Card>
-                    <InterchannelInterference 
-                        currentChannel={7}
-                        networks={data || []} />
-                </Card>
+                <div className="flex flex-nowrap space-x-6">
+                    <Card className="w-1/2" cardTitle="2.4 Ghz Band">
+                        {wifiScan.isLoading && <SkeletonElement />}
+                        {wifiScan.data && <InterchannelInterference 
+                            currentChannel={wifiScan.data?.channel || 0}
+                            networks={getNetworkByBand("2.4 GHz")}
+                            currentNetwork={wifiScan.data?.interface?.SSID || 'Unknown'}
+                            selectedBand="2.4 GHz"
+                            numberOfChannels={14}
+                        />}
+                    </Card>
+                    <Card className="w-1/2" cardTitle="5 Ghz Band">
+                        {wifiScan.isLoading && <SkeletonElement />}
+                        {wifiScan.data && <InterchannelInterference 
+                            currentChannel={wifiScan.data?.channel || 0}
+                            networks={getNetworkByBand("5 GHz")}
+                            currentNetwork={wifiScan.data?.interface?.SSID || 'Unknown'}
+                            selectedBand="5 GHz"
+                            numberOfChannels={48}
+                        />}
+                    </Card>
+
+                </div>
                 <FilterTabs
                     options={bandOptions}
                     value={activeBand}
@@ -238,7 +281,7 @@ function WifiNetwork() {
                             {rows.map((row) => (
                                     <tr key={row.id} className="hover:bg-gray-700 transition-colors whitespace-nowrap">
                                         {row.getAllCells().map((cell) => (
-                                            <td key={cell.id} className="px-6 py-4">
+                                            <td key={cell.id} className={`px-6 py-4 max-w-[200px] text-wrap`}>
                                                 <FlexRender cell={cell} />
                                             </td>
                                         ))}

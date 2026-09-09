@@ -56,7 +56,7 @@ export interface IWifiInterface {
   description?: string;
   physical_address?: string;
   state?: string;
-  SSDI?: string;
+  SSID?: string;
   band?: string;
   channel?: string;
   radio_type?: string;
@@ -179,10 +179,28 @@ export interface IHeaderRowProps {
     };
   }, IWifiTableData>
 }
+
+export interface INetwork {
+  ssid: string; 
+  bssid: string; 
+  channel?: number | null; 
+  signalPercent?: number | null;
+  band?: string | null;
+}
+
+export type TNetworks = Array<INetwork>;
+
+export interface INetworkbyBand {
+  '2.4 GHz'?: () => INetwork[] | undefined | null,
+  '5 GHz'?: () => INetwork[] | undefined | null,
+  '6 GHz'?: () => INetwork[] | undefined | null
+}
+
 type ColumnSort = {
   id: string
   desc: boolean
 }
+
 
 export type SortingState = ColumnSort[]
 

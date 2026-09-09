@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { useEffect, useMemo, useRef } from "react";
+import { valueToPropertyColor } from "../../Utils/cssClasses";
 
 type GaugeProps = {
   value: number;
@@ -8,19 +9,16 @@ type GaugeProps = {
   color?: string;
   trackColor?: string;
   className?: string;
-  gaugeColor: string;
 };
 
 export default function Gauge({
   value,
   width = 240,
-  margin = 20,
   trackColor = "fill-white",
-  gaugeColor,
   className = ''
 }: GaugeProps) {
   const valuePathRef = useRef<SVGPathElement>(null);
-
+  const gaugeColor = valueToPropertyColor(value || 0);
   const clamped = Math.max(0, Math.min(100, value));
 
   const height = width * 0.6;
@@ -50,7 +48,7 @@ export default function Gauge({
 
   useEffect(() => {
     d3.select(valuePathRef.current)
-      .transition()
+      .transition(`translate(${centerX}, ${centerY})`)
       .duration(600)
       .attr("d", buildArc(clamped));
   }, [clamped, buildArc]);
