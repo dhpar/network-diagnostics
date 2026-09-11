@@ -1,34 +1,14 @@
-import { useEffect, useState } from "react";
 import ROUTES from '../routes.ts';
 import type { IscanInfo } from "../App.types.ts";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { fetchResource, getResource } from "../utils.ts";
 
 const useNetworkInfo = () => {
-    const [ networkInfo, setData ] = useState<IscanInfo>();
-    const [ isNetworkInfoLoading, setIsLoading ] = useState<boolean>(true);
-    const [ networkInfoError, setNetworkInfoError ] = useState<Error>();
-
-    const fetchData = async () => {
-        try {
-            const resp = await fetch(ROUTES.NETWORK_INFO);
-            setIsLoading(false);
-
-            const respJson = await resp.json() as IscanInfo;
-            setData(respJson);
-        } catch (error) {
-            setNetworkInfoError(error as Error);
-        }
-        setIsLoading(false);
-    }
-
-    useEffect(() => {
-        fetchData();
-    },[]);
-
-    return {
-        networkInfo,
-        isNetworkInfoLoading,
-        networkInfoError
-    }
+    const networkInfoRequest = getResource(ROUTES.NETWORK_INFO);  
+    return useSuspenseQuery({ 
+        queryKey: ['useNetworkInfo'], 
+        queryFn: () => fetchResource<IscanInfo>(networkInfoRequest)
+    });
 }
 
 export default useNetworkInfo;

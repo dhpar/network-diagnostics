@@ -48,8 +48,8 @@ export default function Gauge({
 
   useEffect(() => {
     d3.select(valuePathRef.current)
-      .transition(`translate(${centerX}, ${centerY})`)
-      .duration(600)
+      // .transition(`translate(${centerX}, ${centerY})`)
+      // .duration(600)
       .attr("d", buildArc(clamped));
   }, [clamped, buildArc]);
 
@@ -64,8 +64,8 @@ export default function Gauge({
       className={className}
     >
       <g transform={`translate(${centerX}, ${centerY})`}>
-        <path d={trackPath} className={trackColor} />
-        <path ref={valuePathRef} d={buildArc(0)} className={gaugeColor} />
+        <path d={trackPath} className={`mask-clip-content mask-size-[auto_100px]${trackColor}`} />
+        <path ref={valuePathRef} d={buildArc(0)} className={`animate-rotate ${gaugeColor}`} />
         <text
           y={innerRadius * 0.45}
           textAnchor="middle"

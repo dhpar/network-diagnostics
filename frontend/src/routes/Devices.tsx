@@ -12,15 +12,17 @@ import {
     useTable,
 } from '@tanstack/react-table';
 import type { ColumnFiltersState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp, ChevronsUpDown, Circle, Smartphone } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronsUpDown, Circle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import Layout from '../Layout';
 import { getResource, fetchResource } from '../utils';
-import type { IDevice, TDevices, TStatusType } from '../App.types';
+import type { FilterTabOption, IDevice, TDevices, TStatusType } from '../App.types';
 import ROUTES from '../routes';
 import EditDevice from '../components/Device/EditDevice';
-import FilterTabs, { type FilterTabOption } from '../components/Filters/FilterTabs';
+import FilterTabs from '../components/Filters/FilterTabs';
+import { DeviceIdentity, getDeviceDisplayName } from '../components/Device/DeviceIdentity';
+
 
 export const Route = createFileRoute('/Devices')({
     component: Devices,
@@ -40,8 +42,7 @@ type Features = typeof features;
 
 const helper = createColumnHelper<Features, IDevice>();
 
-const getDeviceDisplayName = (device: IDevice): string =>
-    device.label || (device.hostname && device.hostname !== 'Unknown' ? device.hostname : 'Unknown');
+
 
 const ConnectionIcon: FunctionComponent<{ status: TStatusType }> = ({ status }) => {
     switch (status) {
@@ -54,25 +55,6 @@ const ConnectionIcon: FunctionComponent<{ status: TStatusType }> = ({ status }) 
             return <Circle className='w-5 h-5 stroke-gray-700' aria-label='Unknown' />
     }
 };
-
-const DeviceIdentity: FunctionComponent<{ device: IDevice }> = ({ device }) => (
-    <div className="flex flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-            <p className="font-medium text-gray-100">{getDeviceDisplayName(device)}</p>
-            {Boolean(device.random_mac) && (
-                <Smartphone
-                    className="w-4 h-4 text-gray-400 fill-current"
-                    aria-label="Random MAC address"
-                />
-            )}
-        </div>
-        <div className="font-mono text-sm">
-            <span className="text-blue-300">{device.ip}</span>
-            {device.mac && <span className="text-gray-400"> · {device.mac}</span>}
-        </div>
-        {device.vendor && <p className="text-xs text-gray-500">{device.vendor}</p>}
-    </div>
-);
 
 const columns = helper.columns([
     helper.accessor('status', {
@@ -135,17 +117,38 @@ function Devices() {
         (table.state.columnFilters.find((filter) => filter.id === 'status')?.value as StatusFilter | undefined) ?? 'all';
 
     const statusOptions: FilterTabOption<StatusFilter>[] = useMemo(() => {
-        const counts = { online: 0, offline: 0, unknown: 0 };
-        devices.forEach((device) => {
-            if (device.status === 'online') counts.online++;
-            else if (device.status === 'offline') counts.offline++;
-            else counts.unknown++;
-        });
+        const counts = devices.reduce(
+            (acc, {status}:IDevice) => ({
+                ...acc,
+                [status]: acc[status] + 1,
+            }),
+            { success: 0, unsuccessful: 0, unknown: 0, online: 0, offline: 0 },
+        );
+
         return [
-            { value: 'all' as const, label: 'All', count: devices.length },
-            { value: 'online' as const, label: 'Online', count: counts.online, activeClassName: 'bg-green-600 border-green-500 text-white' },
-            { value: 'offline' as const, label: 'Offline', count: counts.offline, activeClassName: 'bg-red-600 border-red-500 text-white' },
-            { value: 'unknown' as const, label: 'Unknown', count: counts.unknown, activeClassName: 'bg-gray-600 border-gray-400 text-white' },
+            { 
+                value: 'all' as const, 
+                label: 'All', 
+                count: devices.length 
+            },
+            { 
+                value: 'online' as const, 
+                label: 'Online', 
+                count: counts.online, 
+                activeClassName: 'bg-green-600 border-green-500 text-white'
+            },
+            { 
+                value: 'offline' as const, 
+                label: 'Offline', 
+                count: counts.offline, 
+                activeClassName: 'bg-red-600 border-red-500 text-white'
+            },
+            { 
+                value: 'unknown' as const, 
+                label: 'Unknown', 
+                count: counts.unknown, 
+                activeClassName: 'bg-gray-600 border-gray-400 text-white' 
+            },
         ];
     }, [devices]);
 

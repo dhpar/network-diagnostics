@@ -1,42 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
-import type { TWifiScan } from "../App.types";
-import { fetchResource, getResource } from "../utils";
-import ROUTES from '../routes';
 import { Wifi as WifiIcon, Signal } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import Layout from "../Layout";
 import { useState, type ChangeEventHandler } from "react";
 import Card from "../components/Layout/Card/Card";
 import Gauge from "../components/Graphs/Gauge";
-import Loading from "../components/States/Loading";
-import Error from "../components/States/Error";
 import { valueToPropertyColor } from "../Utils/cssClasses";
+import { useScanWifi } from "../hooks/useScanWifi";
+import SuspenseWrapper from "../components/States/SuspenseWrapper";
 
 export const Route = createFileRoute('/Wifi')({
   component: Wifi,
 });
 
 function Wifi() {
-    const wifiScanRequest = getResource(ROUTES.SCAN_WIFI);
-    const [refetchInterval, setRefetchInterval] = useState("1");
-    const { data, refetch, isLoading, isRefetching, isError, error, isFetched } = useQuery({
-        queryKey: ['Wifi scan'],
-        queryFn: () => fetchResource<TWifiScan>(wifiScanRequest),
-        refetchInterval: parseInt(refetchInterval)*1000
-    });
-    const handleChangeRefetch:ChangeEventHandler<HTMLInputElement> = (e) => setRefetchInterval(e.currentTarget.value);
-
-    const interferenceColor = (level: string | undefined) => {
-        switch(level) {
-            case 'low': return 'text-green-500';
-            case 'medium': return 'text-amber-500';
-            case 'high': return 'text-red-500';
-            default: return 'text-gray-500';
-        }
-    };
+    const [ refetchInterval, setRefetchInterval ] = useState(1);
+    const { 
+        data, 
+        refetch, 
+        isLoading, 
+        isRefetching, 
+        error, 
+        isFetched 
+    } = useScanWifi(refetchInterval);
+    const handleChangeRefetch:ChangeEventHandler<HTMLInputElement> = (e) => setRefetchInterval(parseInt(e.currentTarget.value));
 
     return (
-        <Layout title='WiFi Status' isRefreshLoading={isLoading || isRefetching} refetch={refetch}>
+        <Layout 
+            title='WiFi Status' 
+            isRefreshLoading={isLoading || isRefetching} 
+            refetch={refetch}
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="col-start-4">
                     <label htmlFor='refetchInterval'>Refetch Interval</label>
@@ -44,8 +37,7 @@ function Wifi() {
                 </div>
             </div>
             <div className="space-y-6">
-                {isError && <Error error={error} />}
-                {isLoading && <Loading />}
+                <SuspenseWrapper message={error?.message || 'There was an error'}>
                 {isFetched && data && (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -145,6 +137,7 @@ function Wifi() {
                         )}
                     </>
                 )}
+                </SuspenseWrapper>
             </div>
         </Layout>
     )

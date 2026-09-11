@@ -238,54 +238,6 @@ def background_scan() -> List[Device]:
         update_scan_results()
         time.sleep(10)
 
-# def run_ssh_command(host: str, username: str, command: str, timeout=10) -> dict[str, str]:
-#     """
-#     Runs a shell command and returns its output.
-
-#     `command` can be a string ("ls -la") or a list (["ls", "-la"]), a list
-#     is safer and preferred when any part of the command includes a variable
-#     (hostname, IP, filename, etc), since it avoids shell interpretation of
-#     that value entirely.
-
-#     Returns a dict: {"stdout": str, "stderr": str, "returncode": int}
-#     Raises RuntimeError if the command isn't found or times out.
-#     """
-#     load_dotenv('/home/david/coding/network-diagnostics/backend/.env.backend.dev')
-#     password = os.getenv("ROUTER_SSH_PASSWORD")
-#     client = paramiko.SSHClient()
-    
-#     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-#     if not password:
-#         raise Exception(f"Need a password in order to run SSH on the router")
-    
-#     try:
-#         client.connect(
-#             hostname=host, 
-#             username=username, 
-#             password=password,
-#             timeout=timeout
-#         )
-#         client.connect(host, username=username, password=password, timeout=timeout)
-#         stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
-#         output = stdout.read().decode()
-#         error = stderr.read().decode()
-#         return {
-#             "stdout": output.strip(), 
-#             "stderr": error.strip()
-#         }
-#     finally:
-#         client.close()
-
-# def lease_DHCP_time():
-#     result = run_ssh_command("192.168.0.1", "admin", "cat /tmp/dhcp.leases")
-#     stdout = result.get('stdout')
-#     error = result.get('error')
-    
-#     return {
-#         "stdout": stdout,
-#         "stderr": error,
-#     }
-
 def guess_os_family(ip):
     reply = scapy.sr1(
         IP(dst=ip)/ICMP(), 

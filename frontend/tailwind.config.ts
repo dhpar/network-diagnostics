@@ -1,10 +1,10 @@
 import colors from 'tailwindcss/colors';
 
-module.exports = {
+export default {
   theme: {
     colors: {
-      gray: colors.coolGray,
-      blue: colors.lightBlue,
+      gray: colors.slate,
+      blue: colors.teal,
       red: colors.rose,
       pink: colors.fuchsia,
     },

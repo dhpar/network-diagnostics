@@ -4,7 +4,6 @@ import sqlite3;
 from typing import List, TypedDict
 
 class Device(TypedDict):
-    
     mac: str | None
     ip: str | None
     hostname: str | None
@@ -72,16 +71,7 @@ def init_db():
                 )
         ''')
 
-        # c.execute('''
-        #     CREATE TABLE IF NOT EXISTS 
-        #         wifi_Networks (
-        #             id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #             sssid: TEXT;
-        #             network_type: TEXT;
-        #             authentication?: TEXT;
-        #             encryption?: TEXT;
-        #         )
-        #     ''')
+       
         conn.commit()
     
 def insert_or_replace_device_db(devices:List[Device]):

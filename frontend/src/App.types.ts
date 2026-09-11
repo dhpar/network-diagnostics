@@ -3,9 +3,11 @@ import type { Row, TableFeature, Table, RowModel, CreatedFilterFn, HeaderGroup }
 
 // 1. Create a plain object configuration
 const Status = {
+  Success: "success",
+  Unsuccessful: "unsuccessful",
+  Unknown: "unknown",
   Online: "online",
   Offline: "offline",
-  Unknown: "unknown"
 } as const; // Makes all properties read-only literal types
 
 // 2. Extract the values into a reusable union type
@@ -37,6 +39,7 @@ export interface IDevice {
 }
 
 export interface IscanInfo {
+  devices: IDevice[];
   local_ip?: string;
   gateway?: string;
   subnet?: string;
@@ -110,7 +113,6 @@ export interface IWifiNeighborNetwork {
 }
 
 export type TWifiNetworksScan = IWifiNeighborNetwork[];
-
 export type TDNSResults = IDNSResult[];
 export type TTracerouteHop = {
   "failed_at_hops": Array<number>,
@@ -191,9 +193,9 @@ export interface INetwork {
 export type TNetworks = Array<INetwork>;
 
 export interface INetworkbyBand {
-  '2.4 GHz'?: () => INetwork[] | undefined | null,
-  '5 GHz'?: () => INetwork[] | undefined | null,
-  '6 GHz'?: () => INetwork[] | undefined | null
+  '2.4 GHz'?: () => INetwork[] | null,
+  '5 GHz'?: () => INetwork[] | null,
+  '6 GHz'?: () => INetwork[] | null
 }
 
 type ColumnSort = {
@@ -201,7 +203,21 @@ type ColumnSort = {
   desc: boolean
 }
 
-
 export type SortingState = ColumnSort[]
 
 export type TabType = 'dashboard' | 'devices' | 'wifi' | 'DNS' | 'traceroute' |'wifi-neighbors';
+
+export interface FilterTabOption<T extends string> {
+    value: T;
+    label: string;
+    count?: number;
+    activeClassName?: string;
+}
+
+export interface IFilterTabsProps<T extends string> {
+    options: FilterTabOption<T>[];
+    value: T;
+    onChange: (value: T) => void;
+    ariaLabel?: string;
+    className?: string;
+}

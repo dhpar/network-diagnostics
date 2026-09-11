@@ -59,11 +59,13 @@ export async function fetchResource<T> (
     console.log("Result:", result);
     console.groupEnd();
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      console.error(`Failed to fetch resource: ${response.status}`, body);
-      throw new Error(body.error ?? `
+      const body = result as { error?: string | { message?: string } };
+      console.error(`Failed to fetch resource: ${response?.status}`, body);
+
+      const errorMessage = typeof body.error === 'string' ? body.error : body.error?.message;
+      throw new Error(errorMessage ?? `
         Failed to fetch resource: ${response.status}
-        ${body.error.message ? `Message: ${body.error.message}` : ''}
+        There was an error fetching the resource.
       `);
     }
     return result as T;

@@ -236,4 +236,17 @@
 
 @layer tailwind {
   @import "tailwindcss";
+  @theme {
+    --animate-rotate: rotate 0.5s ease-in;
+    @keyframes rotate {
+      0% {
+        transform: rotate(-90deg);
+      }
+    
+      100% {
+        transform: rotate(0deg);
+      }
+    }
+  }
 }
+

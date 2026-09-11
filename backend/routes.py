@@ -126,13 +126,9 @@ def traceroute():
         
 @routes.route(devices_route)
 def get_devices():
-    # lease_time = get_lease_time()
     rows:list[Device] = get_devices_with_label_db()
     devices = []
     for row in rows:
-        # ip = row['ip']
-        # Try to get the hostname (might be None if still processing)
-        # hostname = get_hostname(ip)
         hostname = get_hostname(row['ip'])
         if hostname is not None:
             device = dict(row) | {
@@ -145,8 +141,7 @@ def get_devices():
     logging.info(devices)
     
     return jsonify({
-        'devices': devices,
-        # 'lease_time': lease_time
+        'devices': devices
     })
 
 @routes.route(devices_update_route, methods=['PUT'])

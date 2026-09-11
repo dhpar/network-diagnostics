@@ -3,6 +3,7 @@ import { Network, Clock, RefreshCw } from "lucide-react"
 import { useEffect, useState, type ReactNode, type MouseEvent } from "react";
 import Card from "./components/Layout/Card/Card";
 import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
+import SuspenseWrapper from "./components/States/SuspenseWrapper";
 
 interface ILayout<T> { 
   children: ReactNode, 
@@ -93,7 +94,9 @@ export default function Layout<T>({
           </Card>
         </aside>
         <div className="col-span-4 row-start-2">
-          {children}
+          <SuspenseWrapper message={'There was an error fetching this resurce'}>
+            {children}
+          </SuspenseWrapper>
         </div>
       </main>
       <footer className="bg-gray-800 border-t border-gray-700 mt-12">

@@ -6,10 +6,7 @@ import { createRouter, RouterProvider } from '@tanstack/react-router';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
 import { TanStackDevtools } from '@tanstack/react-devtools';
-import {
-  tableDevtoolsPlugin,
-  useTanStackTableDevtools,
-} from '@tanstack/react-table-devtools';
+import { tableDevtoolsPlugin } from '@tanstack/react-table-devtools';
 
 // Create a new router instance
 const router = createRouter({ routeTree })
@@ -24,9 +21,9 @@ declare module '@tanstack/react-router' {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      throwOnError: (error: any) => error?.response?.status >= 500,
       // Data stays fresh for 5 minutes before turning stale
       staleTime: 1000 * 60 * 5,
-       
     },
   },
 })
