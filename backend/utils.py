@@ -1,7 +1,6 @@
 import os
 from typing import List
 from venv import logger
-# from dotenv import load_dotenv
 import scapy.all as scapy
 from scapy.layers.inet import ICMP, IP
 from scapy.layers.l2 import ARP, Ether
@@ -13,7 +12,7 @@ from subprocess import run
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from scapy.sendrecv import srp
-from backend.database import Device, insert_or_replace_device_db, update_device_hostname
+from backend.database.database import Device, get_devices_by_macs_db, insert_or_replace_device_db, update_device_hostname
 from backend.mac_utils import is_locally_administered_mac, mac_lookup_vendor
 from dataclasses import dataclass, field
 
@@ -88,7 +87,7 @@ def get_arp_table():
     
     return devices
 
-def scan_network():
+def scan_network() -> list[list[str]]:
     """
     Scan local network for devices using a broadcast ARP request (scapy).
 
@@ -111,7 +110,7 @@ def scan_network():
         iface=net_config.local_iface,
         verbose=0,
     )
-    # print(answered.summary(lambda s,r: r.sprintf("%Ether.src% %ARP.psrc%") ))
+    
     devices = [[ receive.psrc, receive.src ] for  _, receive in answered]
     return devices
 
@@ -197,34 +196,38 @@ def is_device_online(ip_address):
         print(f"Device {ip_address} is not answering.")
         return False
     
+def find_value_in_dict(value, dictionary):
+    return next((k for k, v in dictionary.items() if v == value), None)
+
 def update_scan_results(): 
     try:
         scapy.conf.route.resync()  # <-- re-read the OS routing table fresh, don't trust scapy's cached copy
+
         answered_devices = scan_network()
-        # Resolve hostnames in parallel (reverse DNS via the router's
-        # local resolver, works for devices whose DHCP lease got a
-        # hostname registered, not guaranteed for every device type)
+        answered_macs = [device[1] for device in answered_devices]
+        devices_from_db = get_devices_by_macs_db(answered_macs)
+        print(devices_from_db)
         devices:List[Device] = []
         if answered_devices:
-            workers = min(8, len(answered_devices))
+            # workers = min(8, len(answered_devices))
             # with ThreadPoolExecutor(max_workers=workers) as executor:
             for ip, mac in answered_devices:               
                 if ip is not None and mac is not None:
                     # TODO: We should decouple the reverse lookup for the hostname and do it separetly from the main scan, otherwise it holdsup the whole scan (takes forever). 
                     queue_reverse_lookup(ip)
-                    hostname = None
-                    vendor = mac_lookup_vendor(mac)
-                    random_mac = is_locally_administered_mac(mac)
+                    hostname = 'Unknown'
+                    vendor = mac_lookup_vendor(mac) or 'Unknown'
+                    random_mac = is_locally_administered_mac(mac) or None
                     now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
             
                     devices.append({
-                        "hostname": hostname or 'Unknown',
-                        "mac": mac or 'Unknown',
-                        "ip": ip or 'Unknown',
-                        "vendor": vendor or 'Unknown',
+                        "hostname": hostname,
+                        "mac": mac,
+                        "ip": ip,
+                        "vendor": vendor,
                         "last_seen": now,
                         "status": "online",
-                        "random_mac": random_mac or None,
+                        "random_mac": random_mac,
                     })
                 else:
                     continue

@@ -26,8 +26,9 @@ class Mac_w_Label(TypedDict):
     updated_at: str | None
     
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'network_diagnostics.db')
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -101,23 +102,60 @@ def insert_or_replace_device_db(devices:List[Device]):
             rows
         )
         conn.commit()
-    
-def get_devices_with_label_db() -> list[Device]:
+        
+def get_devices_db() -> list[Device]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
         
         rows = c.execute('''
             SELECT 
-                d.ip, d.mac, d.random_mac, d.hostname, d.vendor, d.last_seen, d.status, l.label
+                *
             FROM 
-                devices d
-            LEFT JOIN 
-                device_labels l ON UPPER(d.mac) = l.mac
+                devices
             ORDER BY 
                 length(d.ip) ASC, d.ip 
             ASC
         ''')
+        rows_list = rows.fetchall()
+    
+        return rows_list
+def create_placeholders_from_dict(object):
+    return ",".join("?" for _ in object)
+
+def get_devices_by_macs_db(mac_list:list[str]) -> list[Device]:
+    if not mac_list:
+        return []
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        placeholders = create_placeholders_from_dict(mac_list)
+        query = f"SELECT * FROM devices WHERE mac IN ({placeholders})"
+        rows:list[Device] = c.execute(query, mac_list).fetchall()
+        rows_list = [device for device in rows]
+
+        for device in rows_list:
+            print(device)
+    
+        return rows_list
+            
+def get_devices_with_label_db() -> list[Device]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        query = "\
+            SELECT \
+                d.*, l.label \
+            FROM \
+                devices d \
+            LEFT JOIN \
+                device_labels l \
+            ON UPPER(d.mac) = l.mac \
+            ORDER BY \
+                length(d.ip) ASC, d.ip \
+            ASC"
+        rows = c.execute(query)
         rows_list = rows.fetchall()
     
         return rows_list
@@ -161,4 +199,16 @@ def update_device_hostname(ip, hostname):
             SET hostname = ?
             WHERE ip = ?
         ''', (hostname, ip))
+        conn.commit()
+
+
+def update_device_status(mac, status):
+    """Update a single device's hostname in DB"""
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute('''
+            UPDATE devices 
+            SET status = ?
+            WHERE mac = ?
+        ''', (mac, status))
         conn.commit()

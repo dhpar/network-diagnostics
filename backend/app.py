@@ -4,7 +4,7 @@ import threading
 from flask import Flask
 from flask_cors import CORS
 from backend.routes import routes
-from backend.database import init_db
+from backend.database.database import init_db
 from backend.utils import background_scan
 import logging
 from uuid import uuid4

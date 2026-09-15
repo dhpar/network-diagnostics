@@ -4,9 +4,9 @@ import time
 from dotenv import load_dotenv
 from datetime import datetime
 from backend.mac_utils import get_net_mask
-from backend.traceroute import traceroute_host
+from backend.traceroute import fast_traceroute, traceroute_host
 from backend.utils import get_hostname, net_config, ping_host
-from backend.database import Device, delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
+from backend.database.database import Device, delete_label_db, get_db, get_devices_with_label_db, update_devices_label_db
 from backend.wifi import get_neighbor_nets, get_wifi_signal_quality
 from flask import request, jsonify, abort, Blueprint, request, current_app
 import socket
@@ -113,10 +113,10 @@ def traceroute():
         return jsonify({'error': 'Missing required query param: target'}), 400
 
     max_hops = request.args.get('max_hops', default=20, type=int)
-    timeout = request.args.get('timeout', default=1, type=int)
+    timeout = request.args.get('timeout', default=30000, type=int)
 
     try:
-        result = traceroute_host(target, max_hops=max_hops, timeout=timeout)
+        result = fast_traceroute(target, max_hops, timeout, True)
         return jsonify(result)
     except ValueError as e:
         abort(400, description=str(e))
