@@ -1,5 +1,3 @@
-
-
 export const valueToPropertyColor = (value?: number | null, property: string = 'text'): string =>  {
     if (value === null || value === undefined) 
         return property === 'bg'? 'bg-gray-500' : 'text-gray-500';

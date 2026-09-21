@@ -1,24 +1,26 @@
 import { Link } from "@tanstack/react-router";
-import { Network, Clock, RefreshCw } from "lucide-react"
-import { useEffect, useState, type ReactNode, type MouseEvent } from "react";
+import { Network, Clock, RefreshCw } from "lucide-react";
 import Card from "./components/Layout/Card/Card";
 import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 import SuspenseWrapper from "./components/States/SuspenseWrapper";
+import { type ReactNode, useState, useEffect, type FunctionComponent } from "react";
 
-interface ILayout<T> { 
+interface ILayout { 
   children: ReactNode, 
   title?: string, 
   isRefreshLoading?:boolean, 
   refetch?: 
     (options?: RefetchOptions | undefined) =>     
-      Promise<QueryObserverResult<NoInfer<T>, Error>>
+      Promise<QueryObserverResult>
 }
-export default function Layout<T>({
+
+const Layout: FunctionComponent<ILayout> = ({
   children, title, isRefreshLoading, refetch
-}: ILayout<T>) {
+}) => {
   const [connected, setConnected] = useState<boolean>(false);
-  const [lastUpdate, setLastUpdate] = useState<Date>();
-  const handleRefetchButton = (event:MouseEvent<HTMLButtonElement>) => {
+  const date = new Date;
+  const [lastUpdate, setLastUpdate] = useState<Date>(date);
+  const handleRefetchButton = (event: { preventDefault: () => void; }) => {
     event.preventDefault();
     refetch && refetch();
     console.log('Refetching');
@@ -107,3 +109,5 @@ export default function Layout<T>({
     </div>
   )
 }
+
+export default Layout;
