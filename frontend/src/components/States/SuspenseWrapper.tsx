@@ -2,6 +2,7 @@ import { Suspense, useState, type FunctionComponent, type ReactNode } from 'reac
 import { RefreshCw, WifiOffIcon } from 'lucide-react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
+import Card from '../Layout/Card/Card';
 
 interface ISuspenseWrapper {
     message: string; 
@@ -55,9 +56,12 @@ const FallbackErrorBoundary:FunctionComponent<IFallbackErrorBoundary> = ({ messa
 }    
 
 const SuspenseWrapper: FunctionComponent<ISuspenseWrapper> = ({message, children, isATableLoading = false}) => {
-    const Loading = () => isATableLoading? 
-        <SkeletonTable /> : 
-        <p className="text-sm text-white">Loading...</p>;
+    const Loading = () => 
+        <Card>
+            {isATableLoading? 
+            <table className='w-full divide-y divide-gray-700'><SkeletonTable /></table> : 
+            <p className="text-sm text-white">Loading...</p>}
+        </Card>;
     
     return (
         <QueryErrorResetBoundary>

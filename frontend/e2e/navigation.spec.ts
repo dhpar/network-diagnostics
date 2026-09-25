@@ -1,16 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-// test('loads the dashboard', async ({ page }) => {   
-//     await page.route('http://localhost:5000/**', async (route) => {
-//         const request = route.request();
-//         const requestHeaders = request.headers();
-//         const corsHeaders = {
-//             'access-control-allow-origin': requestHeaders.origin ?? '*',
-//             'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-//             'access-control-allow-headers': 'access-control-allow-origin, access-control-allow-method, access-control-allow-headers, content-type',
-//         };
-//     });
-// });
 test('loads the dashboard and navigates to DNS lookup', async ({ page }) => {
   const apiResponses: Record<string, unknown> = {
     '/api/network/info': {},

@@ -115,6 +115,7 @@ def traceroute():
 
     try:
         result = traceroute_scappy(target)
+        print(result)
         return jsonify(result)
     except ValueError as e:
         abort(400, description=str(e))

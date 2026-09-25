@@ -115,27 +115,22 @@ export interface IWifiNeighborNetwork {
 export type TWifiNetworksScan = IWifiNeighborNetwork[];
 export type TDNSResults = IDNSResult[];
 export type TTracerouteHop = {
-  "failed_at_hops": Array<number>,
-  "has_failures": Boolean,
-  "hops": Array<{
-      "hop": number,
-      "hostname": string,
-      "ip": string,
-      "rtt_ms": number,
-      "status": "ok" | string;
-  }>,
-  "reached": Boolean,
-  "target": string,
-  "target_ip": string,
-  "timing": {
-    "traceroute_ms": number,
-    "dns_lookup_ms": number,
-    "total_ms": number,
-    "destination_rtt_ms": number,
-    "estimated_one_way_ms": number
-  },
-  "total_hops": number
+  address: string;
+  hop_number: number;
+  traceroute_ms: number | string;
+  ttl?: number;
+  reply_ttl?: number | null;
+  hostname?: string | null;
 }
+
+export type TTracerouteResult = {
+  target: string;
+  target_ip: string;
+  timing: TTracerouteHop[];
+  total_hops: number;
+}
+
+export type TTracerouteResponse = TTracerouteResult | { json: TTracerouteResult };
 
 export interface IWifiTableData {
     ssid?: string;

@@ -1,7 +1,7 @@
-import  type { KeyboardEvent, MouseEvent } from 'react'; 
+import type { KeyboardEvent, ChangeEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchResource, putResource } from '../../utils';
+import { deleteResource, fetchResource, putResource } from '../../utils';
 import ROUTES from '../../routes';
 import type { IDevice } from '../../App.types';
 import { SquarePenIcon, TrashIcon, CheckIcon, XIcon } from 'lucide-react';
@@ -16,11 +16,7 @@ const EditDevice: React.FC<EditDeviceProps> = ({
   const [ deviceLabel, setDeviceLabel ] = useState<string>('');
   const [ isEditingLabel, setIsEditingLabel ] = useState(false);
 
-  if(!device || !device.mac) {
-    return "We need a MAC address to create a Label"
-  }
-  
-  const editLabelRequest = useMutation<IDevice, Error, {mac: string, label:string}>({
+  const editLabelRequest = useMutation<{mac: string, label: string}, Error, {mac: string, label:string}>({
     mutationFn: async ({mac,label}) => {
         const devicesRequestPut = putResource(ROUTES.PUTDEVICELABEL(mac), {label});
         return await fetchResource(devicesRequestPut)
@@ -30,10 +26,10 @@ const EditDevice: React.FC<EditDeviceProps> = ({
       },
   });
 
-  const delLabelRequest = useMutation<IDevice, Error, {mac: string, label:string}>({
+  const delLabelRequest = useMutation<{mac: string, deleted: boolean}, Error, {mac: string, label:string}>({
     mutationFn: async ({mac,label}) => {
-        const devicesRequestPut = putResource(ROUTES.PUTDEVICELABEL(mac), {label});
-        return await fetchResource(devicesRequestPut)
+        const deleteLabelRequest = deleteResource(ROUTES.DELETEDEVICE(mac), {label});
+        return await fetchResource(deleteLabelRequest)
       },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['devices'] });
@@ -43,7 +39,6 @@ const EditDevice: React.FC<EditDeviceProps> = ({
   const handleInputKeyboard = (event: KeyboardEvent<HTMLInputElement>) => {
     if(!device.mac) return false;
     if(event.key === 'Enter') {
-      setDeviceLabel(event.currentTarget.value);
       editLabelRequest.mutate({mac: device.mac, label: event.currentTarget.value} );
       setIsEditingLabel(false);
     }
@@ -53,24 +48,26 @@ const EditDevice: React.FC<EditDeviceProps> = ({
 
   } 
 
-  const handleEditButton = (event: 
-    MouseEvent<HTMLButtonElement> | 
-    KeyboardEvent<HTMLButtonElement>
-  ) => {
+  const handleEditButton = () => {
     if(!device.mac) return null;
+    if (isEditingLabel) {
+      editLabelRequest.mutate({mac: device.mac, label: deviceLabel});
+      setIsEditingLabel(false);
+      return;
+    }
+    setDeviceLabel(device.label ?? '');
     setIsEditingLabel(true);
-    setDeviceLabel(event.currentTarget.value);
-    editLabelRequest.mutate({mac: device.mac, label: event.currentTarget.value} );
-    console.log('Enter pressed! Submitting:', deviceLabel);
-    // setIsEditingLabel(false);
   };
 
-  const handleDeleteClick = (event:MouseEvent<HTMLButtonElement>) => {
-    if (device.mac && !isEditingLabel) {
-      delLabelRequest.mutate({mac: device.mac, label: event.currentTarget.value});
+  const handleDeleteClick = () => {
+    if (device.mac) {
+      delLabelRequest.mutate({mac: device.mac, label: device.label ?? ''});
     }
-    setIsEditingLabel(prev => !prev);
   }
+
+  const handleLabelChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setDeviceLabel(event.currentTarget.value);
+  };
 
   useEffect(() => {
     // If we click outside, hide the input and go back to the text label.
@@ -81,13 +78,18 @@ const EditDevice: React.FC<EditDeviceProps> = ({
     return document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  if(!device || !device.mac) {
+    return "We need a MAC address to create a Label"
+  }
+
   return (
     <div className='flex align-middle gap-1 min-w-full max-w-52 justify-between'>
       {!isEditingLabel? 
       <p className='flex items-center grow  align-middle'>{editLabelRequest.isPending? 'Changing value...' : device.label }</p> : 
       <input
         type="text"
-        defaultValue={device.label || ''}
+        value={deviceLabel}
+        onChange={handleLabelChange}
         onKeyDown={handleInputKeyboard}
         placeholder="Device name..."
         name={`${device.mac}-label`}
