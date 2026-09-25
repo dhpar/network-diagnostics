@@ -52,3 +52,19 @@ export default tseslint.config({
   },
 })
 ```
+
+## End-to-end tests
+
+Install Playwright's Chromium browser once after installing project dependencies:
+
+```sh
+pnpm exec playwright install chromium
+```
+
+Run the end-to-end tests from this directory:
+
+```sh
+pnpm test:e2e
+```
+
+Playwright starts the Vite development server automatically. Tests stub backend API responses so they do not require the Flask server or local network scanning hardware.

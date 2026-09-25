@@ -5,6 +5,8 @@ import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
+from scapy.all import sr1
+from scapy.layers.inet import ICMP, IP
 from backend.utils import reverse_lookup
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -165,7 +167,29 @@ def resolve_hostname(ip: str) -> str:
     except (socket.herror, socket.gaierror):
         return ip
  
- 
+def traceroute_scappy(host: str):
+    maxTTL = 50
+    response = []
+    dest_addr = socket.gethostbyname(host)
+
+    for ttl in range(1, maxTTL):
+        L3 = IP(dst=host, ttl=ttl)
+        packet = L3/ICMP()
+        reply = sr1(packet, verbose=0, timeout=2)
+        # if reply is not None:
+        response.append({
+            'traceroute_ms': reply.ttl if reply is not None else '*',
+            'address': reply.src if reply is not None else '*',
+            'hop_number': ttl
+        })
+        
+    return {
+        "target": dest_addr,
+        "target_ip": host,
+        "total_hops": len(response),
+        "timing":response
+    }
+    
 def fast_traceroute(host: str, max_hops: int = 30, timeout: float = 1.0, resolve: bool = False):
     traceroute_start = time.time()
     timed_out_hops = []
