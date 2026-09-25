@@ -234,7 +234,7 @@ function WifiNetwork() {
                             {rows.map((row) => (
                                     <tr key={row.id} className="hover:bg-gray-700 transition-colors whitespace-nowrap">
                                         {row.getAllCells().map((cell) => (
-                                            <td key={cell.id} className={`px-6 py-4 max-w-[200px] text-wrap`}>
+                                            <td key={cell.id} className={`px-6 py-4 max-w-50 text-wrap`}>
                                                 <FlexRender cell={cell} />
                                             </td>
                                         ))}
