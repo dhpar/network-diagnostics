@@ -15,8 +15,8 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import Layout from "../Layout";
-import type { IWifiNeighborNetwork, IWifiTableData, TNetworks } from "../App.types";
-import FilterTabs, { type FilterTabOption } from "../components/Filters/FilterTabs";
+import type { FilterTabOption, IWifiNeighborNetwork, IWifiTableData, TNetworks } from "../App.types";
+import FilterTabs from "../components/Filters/FilterTabs";
 import { SSID } from "../components/WifiNetwork/Cells/SSID";
 import { SignalPercent } from "../components/WifiNetwork/Cells/SignalPercent";
 import { Band } from "../components/WifiNetwork/Cells/Band";

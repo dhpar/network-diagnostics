@@ -4,7 +4,7 @@ import { Circle, Globe } from 'lucide-react';
 import Card from '../Layout/Card/Card';
 
 export function TracerouteTable () {
-    const { data: response, refetch, isLoading } = useTraceroute();
+    const { data: response } = useTraceroute();
     const data = response && ('json' in response ? response.json : response);
     const hops = data?.timing ?? [];
     const reached = hops.some((hop) => hop.address === data?.target);

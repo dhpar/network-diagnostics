@@ -1,5 +1,5 @@
 import { Suspense, useState, type FunctionComponent, type ReactNode } from 'react';
-import { RefreshCw, WifiOffIcon } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
 import Card from '../Layout/Card/Card';
