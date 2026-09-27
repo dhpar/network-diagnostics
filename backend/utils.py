@@ -43,7 +43,7 @@ def get_gateway():
             # Reverse order, convert hex to int
             return "%i.%i.%i.%i" % (int(hip[6:8], 16), int(hip[4:6], 16), int(hip[2:4], 16), int(hip[0:2], 16))
     except Exception:
-        print("Error getting default gateway (get_gateway)")
+        return("Error getting default gateway (get_gateway)")
 
 def ping_host(ip):
     """Ping a host to check if it's alive"""
@@ -83,7 +83,7 @@ def get_arp_table():
                         'type': 'dynamic'
                     })
     except Exception as e:
-        print(f"Error getting ARP table: {e}")
+        return(f"Error getting ARP table: {e}")
     
     return devices
 
@@ -189,12 +189,7 @@ def is_device_online(ip_address):
     answered, _ = srp(packet, timeout=2, verbose=False)
     
     # If the answered list has items, the device is online and returned its MAC address
-    if answered:
-        print(f"Device {ip_address} is answering. MAC: {answered[0][1].hwsrc}")
-        return True
-    else:
-        print(f"Device {ip_address} is not answering.")
-        return False
+    return True if answered else False
     
 def find_value_in_dict(value, dictionary):
     return next((k for k, v in dictionary.items() if v == value), None)
@@ -206,7 +201,6 @@ def update_scan_results():
         answered_devices = scan_network()
         answered_macs = [device[1] for device in answered_devices]
         devices_from_db = get_devices_by_macs_db(answered_macs)
-        print(devices_from_db)
         devices:List[Device] = []
         if answered_devices:
             # workers = min(8, len(answered_devices))

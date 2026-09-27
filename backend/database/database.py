@@ -134,10 +134,6 @@ def get_devices_by_macs_db(mac_list:list[str]) -> list[Device]:
         query = f"SELECT * FROM devices WHERE mac IN ({placeholders})"
         rows:list[Device] = c.execute(query, mac_list).fetchall()
         rows_list = [device for device in rows]
-
-        for device in rows_list:
-            print(device)
-    
         return rows_list
             
 def get_devices_with_label_db() -> list[Device]:

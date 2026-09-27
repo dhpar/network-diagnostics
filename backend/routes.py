@@ -92,8 +92,7 @@ def wifi_neighbor_networks():
         wifi_neighbor = get_neighbor_nets() 
         return jsonify(wifi_neighbor)
     except Exception as e:
-        print(f"WiFi scan error: {e}")
-        return jsonify({'error': 'Error getting wifi neighbors'}), 500
+        return jsonify({'error': f'Error getting wifi neighbors. {e}'}), 500
 
 @routes.route(wifi_route)
 def wifi_scan():
@@ -102,8 +101,10 @@ def wifi_scan():
         wifi_quality = get_wifi_signal_quality()
         return jsonify(wifi_quality)
     except Exception as e:
-        print(f"WiFi scan error: {e}")
-        return jsonify({'error': 'WiFi scanning requires a native Windows Python with pywifi installed'}), 500
+        return jsonify({
+            'error': 'WiFi scanning requires a native Windows Python with pywifi installed',
+            'details': e
+        }), 500
 
 @routes.route(traceroute_route)
 def traceroute():
@@ -115,12 +116,10 @@ def traceroute():
 
     try:
         result = traceroute_scappy(target)
-        print(result)
         return jsonify(result)
     except ValueError as e:
         abort(400, description=str(e))
     except Exception as e:
-        print(f"Traceroute error: {e}")
         abort(500, description='Traceroute failed')
         
 @routes.route(devices_route)
@@ -137,7 +136,7 @@ def get_devices():
             device = dict(row)
         devices.append(device)
     
-    logging.info(devices)
+    # logging.info(devices)
     
     return jsonify({
         'devices': devices

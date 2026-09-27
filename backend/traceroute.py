@@ -222,8 +222,6 @@ def fast_traceroute(host: str, max_hops: int = 30, timeout: float = 1.0, resolve
     reached_at = None
     hops = []
     
-    print(f"Tracing route to {host} [{dest_addr}] over a max of {max_hops} hops:\n")
-    
     with ThreadPoolExecutor(max_workers=max_hops) as pool:
         futures = {
             pool.submit(probe_ttl, dest_addr, ttl, timeout, ttl + 1000): ttl
@@ -246,18 +244,11 @@ def fast_traceroute(host: str, max_hops: int = 30, timeout: float = 1.0, resolve
         
         ip, elapsed_ms = results[ttl]
         if ip is None:
-            print(f"{ttl:>3}   *        Request timed out.")
             timed_out_hops.append(ttl)
             continue
         
-        label = ip
         if resolve:
-            hostname = resolve_hostname(ip)
             dns_ms = round((time.time() - traceroute_start) * 1000, 1)
-            if hostname != ip:
-                label = f"{hostname} [{ip}]"
- 
-        print(f"{ttl:>3}   {elapsed_ms:>6} ms   {label}")
  
         if ip == dest_addr and reached_at is None:
             reached_at = ttl
@@ -275,11 +266,7 @@ def fast_traceroute(host: str, max_hops: int = 30, timeout: float = 1.0, resolve
             "rtt_ms": avg_rtt,
             "status": status,
         })
-    if reached_at:
-        print(f"\nTrace complete. Reached {dest_addr} at hop {reached_at}.")
-    else:
-        print(f"\nDestination {dest_addr} not confirmed within {max_hops} hops "
-              f"(some hops may block ICMP or silently drop probes).")
+    
     traceroute_ms = round((time.time() - traceroute_start) * 1000, 1)
     destination_rtt_ms = hops[-1]["rtt_ms"] if reached_at else None
     estimated_one_way_ms = round(destination_rtt_ms / 2, 1) if destination_rtt_ms else None

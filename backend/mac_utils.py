@@ -45,8 +45,7 @@ def get_net_mask():
     from backend.utils import net_config
 
     candidates = collect_candidates(net_config.local_ip, allow_host_routes=False)
-    iface = get_net_mask2()
-    print(dir(net_config.iface))
+    
     if not candidates:
         # Nothing but /32 and multicast entries matched, likely a VPN tunnel
         candidates = collect_candidates(net_config.local_ip, allow_host_routes=True)
