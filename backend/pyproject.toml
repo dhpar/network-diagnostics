@@ -1,7 +1,7 @@
 [project]
-name = "backend"
+name = "Netwatch - Backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Locally-hosted web app for diagnosing and monitoring network issues in real-time, device discovery, WiFi scanning, DNS testing, and WebSocket-based live updates."
 readme = "README.md"
 authors = [
     { name = "D", email = "davhern@gmail.com" }

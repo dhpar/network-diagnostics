@@ -15,11 +15,11 @@ const device = {
   status: 'online',
   label: 'Living Room Router',
 };
-
+const backendDomain = 'http://localhost:5000';
 async function stubApi(page: Page, wrapTraceroute = true) {
   const requests: ApiRequest[] = [];
 
-  await page.route('http://localhost:5000/**', async (route) => {
+  await page.route(`${backendDomain}/**`, async (route) => {
     const request = route.request();
     const requestHeaders = request.headers();
     const corsHeaders = {
@@ -110,7 +110,7 @@ test('returns backend health from the health endpoint', async ({ page }) => {
 
   await page.goto('/');
   const response = await page.evaluate(async () => {
-    const result = await fetch('http://localhost:5000/api/health');
+    const result = await fetch(`${backendDomain}/api/health`);
     return { status: result.status, body: await result.json() };
   });
 
@@ -124,7 +124,7 @@ test('accepts an IP address through the ping endpoint', async ({ page }) => {
 
   await page.goto('/');
   const response = await page.evaluate(async () => {
-    const result = await fetch('http://localhost:5000/api/ping/192.0.2.10');
+    const result = await fetch(`${backendDomain}/api/ping/192.0.2.10`);
     return { status: result.status, body: await result.json() };
   });
 

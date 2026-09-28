@@ -377,7 +377,6 @@ def parse_netsh_wlan_networks(raw_output: str) -> List[Dict[str, Any]]:
  
     return networks
  
- 
 def _parse_rates(value: str) -> List[float]:
     rates = []
     for token in value.split():
