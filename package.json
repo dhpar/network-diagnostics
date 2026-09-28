@@ -4,7 +4,6 @@
   "description": "A locally-hosted web application for diagnosing and monitoring network issues with real-time visualization.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "docker:build": "docker-compose up --build",
     "docker:watch": "docker-compose up --watch",
     "penv": "/backend/venv/bin/activate && python /backend/app.py"
@@ -22,5 +21,9 @@
   "workspaces": [
     "frontend",
     "backend"
-  ]
+  ],
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.3"
+  }
 }
