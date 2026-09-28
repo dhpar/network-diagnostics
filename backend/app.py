@@ -1,18 +1,21 @@
 import os
 from dotenv import load_dotenv
 import threading
-from flask import Flask
 from flask_cors import CORS
+from flask_restful import Api
 from backend.routes import routes
 from backend.database.database import init_db
 from backend.utils import background_scan
-import logging
 from uuid import uuid4
 from werkzeug.exceptions import HTTPException
-from flask import jsonify, g
+from flask import Flask, jsonify, g
+from flasgger import Swagger
 
 load_dotenv()
 app = Flask(__name__)
+api = Api(app)
+swagger = Swagger(app)
+
 domain = os.getenv('DOMAIN')
 SQL_Alchemy_DB = f"sqlite:///{os.getenv('SQLALCHEMY_DATABASE_URI')}/"
 

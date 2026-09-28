@@ -1,5 +1,5 @@
 [project]
-name = "Netwatch - Backend"
+name = "Netwatch"
 version = "0.1.0"
 description = "Locally-hosted web app for diagnosing and monitoring network issues in real-time, device discovery, WiFi scanning, DNS testing, and WebSocket-based live updates."
 readme = "README.md"

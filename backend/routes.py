@@ -136,8 +136,6 @@ def get_devices():
             device = dict(row)
         devices.append(device)
     
-    # logging.info(devices)
-    
     return jsonify({
         'devices': devices
     })
