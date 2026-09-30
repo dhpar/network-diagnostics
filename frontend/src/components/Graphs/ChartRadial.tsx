@@ -3,7 +3,7 @@ import {
     PolarGrid, 
     RadialBar, 
     PolarRadiusAxis, 
-    Label, 
+    Label,
     Tooltip
 } from "recharts";
 
@@ -36,15 +36,16 @@ export const ChartRadialShape:FunctionComponent<IChartRadialShape> = ({
     return (
         <ChartContainer
           config={chartConfig}
-          className={`mx-auto aspect-square max-h-[250px]`} 
-          
+          className={`mx-auto aspect-square max-h-62.5`} 
         >
           <RadialBarChart
             data={chartData}
             endAngle={angle}
-            innerRadius={65}
-            outerRadius={95}
+            innerRadius={75}
+            outerRadius={85}
             className="stroke-round transition-colors"
+            startAngle={0}
+            
           >
             <PolarGrid
               gridType="circle"
@@ -52,9 +53,15 @@ export const ChartRadialShape:FunctionComponent<IChartRadialShape> = ({
               className="stroke-gray-100 stroke-10"
               polarRadius={[80]}
             />
-            <RadialBar dataKey="signal" background className={color}/>
+            <RadialBar 
+              dataKey="signal" 
+              background 
+              className={color} 
+              cornerIsExternal
+              cornerRadius={10}
+            />
             
-            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}  decelerate={10}>
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
@@ -93,6 +100,7 @@ export const ChartRadialShape:FunctionComponent<IChartRadialShape> = ({
                 }}
               />
             </PolarRadiusAxis>
+            <Tooltip />
           </RadialBarChart>
         </ChartContainer>
     )

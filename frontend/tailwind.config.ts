@@ -1,4 +1,5 @@
 import colors from 'tailwindcss/colors';
+import plugin from 'tailwindcss/plugin';
 
 export default {
   theme: {
@@ -27,5 +28,20 @@ export default {
       borderColor: ['focus-visible'],
       opacity: ['disabled'],
     }
-  }
+  },
+  plugins: [
+    plugin(function({ addUtilities }) {
+      addUtilities({
+        '.writing-v-lr': {
+          'writing-mode': 'vertical-lr',
+        },
+        '.writing-v-rl': {
+          'writing-mode': 'vertical-rl',
+        },
+        '.writing-h-tb': {
+          'writing-mode': 'horizontal-tb',
+        },
+      })
+    })
+  ]
 }

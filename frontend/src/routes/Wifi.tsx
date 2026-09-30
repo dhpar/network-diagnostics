@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import Layout from "../Layout";
 import Card from "../components/Layout/Card/Card";
-import Gauge from "../components/Graphs/Gauge";
 import { valueToPropertyColor } from "../Utils/cssClasses";
 import { useScanWifi } from "../hooks/useScanWifi";
 import SuspenseWrapper from "../components/States/SuspenseWrapper";
@@ -34,20 +33,7 @@ function Wifi() {
                 >
                     {isFetched && data && (<>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <Card>
-                                <div className="flex items-center space-x-2 mb-2">
-                                    <Signal className="w-5 h-5 text-blue-400" />
-                                    <span className="text-gray-400 text-sm">Signal Quality</span>
-                                </div>
-                                
-                                    <Gauge 
-                                        value={data.signal_quality_percent || 0}  
-                                        className="mx-auto" 
-                                        width={320}
-                                        trackColor="fill-gray-300"
-                                    />
-                                
-                            </Card>
+                            
                             <Card>
                                 <div className="flex items-center space-x-2 mb-2">
                                     <Signal className="w-5 h-5 text-blue-400" />
@@ -57,14 +43,29 @@ function Wifi() {
                                     <ChartRadialShape value={data.signal_quality_percent || 0} />
                                 
                             </Card>
-                            <Card>
+                           
+                            <Card className='flex flex-1 flex-wrap items-baseline'>
                                 <div className="flex items-center space-x-2 mb-2">
                                     <WifiIcon className="w-5 h-5 text-blue-400" />
                                     <span className="text-gray-400 text-sm">Signal Strength</span>
                                 </div>
-                                <p className="font-mono text-2xl text-blue-300">
-                                    {data.signal_strength_dbm !== undefined ? `${data.signal_strength_dbm} dBm` : 'N/A'}
-                                </p>
+                                <div className='w-full p-4'>
+                                    <div className='flex w-full justify-between'>
+                                        <span className='-ml-6'>-90 dbm</span>
+                                        <span className='-mr-6'>-30 dbm</span>
+                                    </div>
+                                    <input type="range" min="-90" max="-30" value={`${data.signal_strength_dbm}`} className='w-full appearance-none bg-emerald-500 accent-indigo-600 rounded-full' list='markers' disabled />
+                                    <datalist id="markers" className='flex writing-v-lr justify-between w-full font-bold text-gray-400 text-sm'>
+                                        <option value="-90">-90 dbm</option>
+                                        <option value="-75">-75 dbm</option>
+                                        <option value="-60">-60 dbm</option>
+                                        <option value="-45">-45 dbm</option>
+                                        <option value="-30">-30 dbm</option>
+                                    </datalist>
+                                    <span className='flex-1 w-full items-stretch p-4 font-mono text-2xl text-blue-300'>     
+                                        {data.signal_strength_dbm !== undefined ? `${data.signal_strength_dbm} dBm` : 'N/A'}
+                                    </span>
+                                </div>
                             </Card>
                             <Card>
                                 <div className="flex items-center space-x-2 mb-2">

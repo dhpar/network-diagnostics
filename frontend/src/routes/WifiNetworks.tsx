@@ -29,6 +29,7 @@ import Card from "../components/Layout/Card/Card";
 import SuspenseWrapper from "../components/States/SuspenseWrapper";
 import { useWifiNeightbors } from "../hooks/useWifiNeighbors";
 import { useScanWifi } from "../hooks/useScanWifi";
+import SimpleArea from "../components/Graphs/SimpleArea";
 
 export const Route = createFileRoute('/WifiNetworks')({
     component: WifiNetwork,
@@ -191,6 +192,10 @@ function WifiNetwork() {
         <Layout title='WiFi Networks' isRefreshLoading={isLoading || isRefetching} refetch={refetch}>
             <div className="space-y-6">
                 <div className="flex flex-nowrap space-x-6">
+                    <Card className="w-1/2" cardTitle="2.4 Ghz Band">
+                    
+                    <SimpleArea />
+                    </Card>
                     <Card className="w-1/2" cardTitle="2.4 Ghz Band">
                         <SuspenseWrapper message={wifiScan.error?.message || 'Error loading'}>
                             <InterchannelInterference 
