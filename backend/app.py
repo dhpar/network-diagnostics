@@ -9,12 +9,9 @@ from backend.utils import background_scan
 from uuid import uuid4
 from werkzeug.exceptions import HTTPException
 from flask import Flask, jsonify, g
-from flasgger import Swagger
 
 load_dotenv()
 app = Flask(__name__)
-api = Api(app)
-swagger = Swagger(app)
 
 domain = os.getenv('DOMAIN')
 SQL_Alchemy_DB = f"sqlite:///{os.getenv('SQLALCHEMY_DATABASE_URI')}/"
